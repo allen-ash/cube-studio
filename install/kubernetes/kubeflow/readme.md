@@ -2,9 +2,6 @@
 # 基础环境需求
 k8s集群，分布式存储，这些都假设在前面的步骤已经完成
 
-# 先创建官方kubeflow
-参考v1.2.0/readme.md
-
 # 部署kubeflow-pipeline
 
 kubeflow每一部分相应的可以独立升级
