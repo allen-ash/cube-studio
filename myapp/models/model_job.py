@@ -42,8 +42,8 @@ import pysnooper
 class Repository(Model,AuditMixinNullable,MyappModelBase):
     __tablename__ = 'repository'
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique = True, nullable=False)
-    server = Column(String(100), nullable=False)
+    name = Column(String(200), unique = True, nullable=False)
+    server = Column(String(200), nullable=False)
     user = Column(String(100), nullable=False)
     password = Column(String(100), nullable=False)
     hubsecret = Column(String(100))
@@ -68,7 +68,7 @@ class Images(Model,AuditMixinNullable,MyappModelBase):
         "Project", foreign_keys=[project_id]
     )
 
-    name = Column(String(200), nullable=False)
+    name = Column(String(500), nullable=False)
     describe = Column(Text)
     repository_id = Column(Integer, ForeignKey('repository.id'))    # 定义外键
     repository = relationship(
@@ -102,7 +102,7 @@ class Job_Template(Model,AuditMixinNullable,MyappModelBase):
     project = relationship(
         "Project", foreign_keys=[project_id]
     )
-    name = Column(String(100), nullable=False,unique=True)
+    name = Column(String(500), nullable=False,unique=True)
     version = Column(Enum('Release','Alpha'),nullable=False,default='Release')
     images_id = Column(Integer, ForeignKey('images.id'))  # 定义外键
     images = relationship(
@@ -212,7 +212,7 @@ class Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
     @property
     def pipeline_url(self):
         pipeline_url="/pipeline_modelview/web/" +str(self.id)
-        return Markup(f'<a href="{pipeline_url}">{self.describe}</a>')
+        return Markup(f'<a target=_blank href="{pipeline_url}">{self.describe}</a>')
 
     @property
     def run_pipeline(self):
@@ -510,7 +510,7 @@ class Task(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
     command = Column(String(1000),default='')
     overwrite_entrypoint = Column(Boolean,default=False)   # 是否覆盖入口
     args = Column(Text)
-    volume_mount = Column(String(200),default='kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives')   # 挂载
+    volume_mount = Column(String(400),default='kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives')   # 挂载
     node_selector = Column(String(100),default='cpu=true,train=true')   # 挂载
     resource_memory = Column(String(100),default='2G')
     resource_cpu = Column(String(100), default='2')
@@ -612,7 +612,7 @@ class RunHistory(Model,MyappModelBase):
     run_id = Column(String(100))
     message = Column(Text, default='')
     created_on = Column(DateTime, default=datetime.datetime.now, nullable=False)
-    execution_date=Column(String(100), nullable=False)
+    execution_date=Column(String(200), nullable=False)
     status = Column(String(100),default='comed')   # commed表示已经到了该调度的时间，created表示已经发起了调度。注意操作前校验去重
 
 
@@ -620,7 +620,8 @@ class RunHistory(Model,MyappModelBase):
     def status_url(self):
         if self.status=='comed':
             return self.status
-        return Markup(f'<a target=_blank href="/workflow_modelview/list/?_flt_2_labels={self.run_id}">{self.status}</a>')
+        path=conf.get('MODEL_URLS',{}).get('workflow','')+'/labels='+self.run_id
+        return Markup(f'<a target=_blank href="{path}">{self.status}</a>')
 
     @property
     def creator(self):
@@ -633,8 +634,9 @@ class RunHistory(Model,MyappModelBase):
 
     @property
     def history(self):
-        url = r'/workflow_modelview/list/?_flt_2_labels="pipeline-id"%3A+"' + '%s"' % self.pipeline_id
-        return Markup(f"<a href='{url}'>运行记录</a>")
+        path=conf.get('MODEL_URLS',{}).get('workflow','')+'/labels="pipeline-id"%3A+"' + '%s"' % self.pipeline_id
+        # url = r'/workflow_modelview/list/?_flt_2_labels="pipeline-id"%3A+"' + '%s"' % self.pipeline_id
+        return Markup(f"<a href='{path}'>运行记录</a>")
 
     @property
     def log(self):

@@ -35,13 +35,13 @@ conf = app.config
 class NNI(Model,AuditMixinNullable,MyappModelBase):
     __tablename__ = 'nni'
     id = Column(Integer, primary_key=True)
-    job_type = Column(Enum('Job'),nullable=False,default='Job')
+    job_type = Column(Enum('Job'),nullable=True,default='Job')
     project_id = Column(Integer, ForeignKey('project.id'), nullable=False)  # 定义外键
     project = relationship(
         "Project", foreign_keys=[project_id]
     )
     name = Column(String(200), unique = True, nullable=False)
-    namespace = Column(String(200), nullable=False,default='katib')
+    namespace = Column(String(200), nullable=True,default='katib')
     describe = Column(Text)
     parallel_trial_count = Column(Integer,default=3)
     maxExecDuration =  Column(Integer,default=3600)
@@ -57,13 +57,15 @@ class NNI(Model,AuditMixinNullable,MyappModelBase):
     job_json = Column(Text, default='{}')  # 根据不同算法和参数写入的task模板
     trial_spec=Column(Text,default='')    # 根据不同算法和参数写入的task模板
     # code_dir = Column(String(200), default='')  # 代码挂载
+    job_worker_image = Column(String(200),nullable=True,default='')
+    job_worker_command = Column(String(200), nullable=True, default='')
     working_dir = Column(String(200), default='')  # 挂载
     volume_mount = Column(String(100), default='kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives')  # 挂载
     node_selector = Column(String(100), default='cpu=true,train=true')  # 挂载
     image_pull_policy = Column(Enum('Always', 'IfNotPresent'), nullable=False, default='Always')
     resource_memory = Column(String(100), default='1G')
     resource_cpu = Column(String(100), default='1')
-    resource_gpu = Column(String(100), default='')
+    resource_gpu = Column(String(100), default='0')
     experiment=Column(Text,default='')  # 构建出来的实验体
     alert_status = Column(String(100), default='Pending,Running,Succeeded,Failed,Terminated')   # 哪些状态会报警Pending,Running,Succeeded,Failed,Unknown,Waiting,Terminated
 

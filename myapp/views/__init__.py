@@ -10,13 +10,15 @@ from . import view_task
 from . import view_pipeline
 from . import view_runhistory
 from . import view_workflow
-# from . import view_katib
 from . import view_nni
 from . import view_serving
+from . import view_train_model
 from . import view_inferenceserving
 from . import view_service_pipeline
-# from . import view_kfserving
 from . import view_link
+from . import view_metadata
+from . import view_metadata_metric
+from . import view_dimension
 from .log import views 
 from .log import api as log_api 
 

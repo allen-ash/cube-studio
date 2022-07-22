@@ -7,6 +7,7 @@ from flask_babel import gettext as __
 from flask_babel import lazy_gettext as _
 import uuid
 import re
+import urllib.parse
 from kfp import compiler
 from sqlalchemy.exc import InvalidRequestError
 # 将model添加成视图，并控制在前端的显示
@@ -29,7 +30,7 @@ from jinja2 import Environment, BaseLoader, DebugUndefined, StrictUndefined
 import os,sys
 from wtforms.validators import DataRequired, Length, NumberRange, Optional,Regexp
 from myapp.forms import JsonValidator
-from myapp.views.view_task import Task_ModelView
+from myapp.views.view_task import Task_ModelView,Task_ModelView_Api
 from sqlalchemy import and_, or_, select
 from myapp.exceptions import MyappException
 from wtforms import BooleanField, IntegerField,StringField, SelectField,FloatField,DateField,DateTimeField,SelectMultipleField,FormField,FieldList
@@ -611,7 +612,7 @@ def run_pipeline(pipeline_file,pipeline_name,kfp_host,pipeline_argo_id,pipeline_
 class Pipeline_ModelView_Base():
     label_title='任务流'
     datamodel = SQLAInterface(Pipeline)
-    check_redirect_list_url = '/pipeline_modelview/list/?_flt_2_name='
+    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('pipeline','')
 
     base_permissions = ['can_show','can_edit','can_list','can_delete','can_add']
     base_order = ("changed_on", "desc")
@@ -619,8 +620,15 @@ class Pipeline_ModelView_Base():
     order_columns = ['id']
 
     list_columns = ['id','project','pipeline_url','creator','modified']
+    cols_width={
+        "id":{"type": "ellip2", "width": 100},
+        "project": {"type": "ellip2", "width": 200},
+        "pipeline_url":{"type": "ellip2", "width": 500}
+    }
     add_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','expired_limit','parallelism','global_env','alert_status','alert_user','parameter']
-    show_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','expired_limit','parallelism','global_env','dag_json_html','pipeline_file_html','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand_html','parameter_html']
+    show_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','expired_limit','parallelism','global_env','dag_json','pipeline_file','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand','parameter']
+    # show_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','parallelism','global_env','dag_json','pipeline_file_html','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand']
+    search_columns = ['id', 'created_by', 'name', 'describe', 'schedule_type', 'project']
     edit_columns = add_columns
 
 
@@ -635,6 +643,12 @@ class Pipeline_ModelView_Base():
             description="英文名(字母、数字、- 组成)，最长50个字符",
             widget=BS3TextFieldWidget(),
             validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54),DataRequired()]
+        ),
+        "describe": StringField(
+            _(datamodel.obj.lab('describe')),
+            description="中文描述",
+            widget=BS3TextFieldWidget(),
+            validators=[DataRequired()]
         ),
         "project":QuerySelectField(
             _(datamodel.obj.lab('project')),
@@ -698,6 +712,7 @@ class Pipeline_ModelView_Base():
         ),
         "schedule_type":SelectField(
             _(datamodel.obj.lab('schedule_type')),
+            default='once',
             description="调度类型，once仅运行一次，crontab周期运行，crontab配置保存一个小时候后才生效",
             widget=Select2Widget(),
             choices=[['once','once'],['crontab','crontab']]
@@ -926,37 +941,7 @@ class Pipeline_ModelView_Base():
         )
         return res
 
-
-    # @event_logger.log_this
-    @action(
-        "download", __("Download"), __("Download Yaml"), "fa-download", multiple=False, single=True
-    )
-    def download(self, item):
-        file_name = item.name+'-download.yaml'
-        file_dir = os.path.join(conf.get('DOWNLOAD_FOLDER'),'pipeline')
-        if not os.path.exists(file_dir):
-            os.makedirs(file_dir)
-        file = open(os.path.join(file_dir,file_name), mode='wb')
-        pipeline_file = item.pipeline_file
-        try:
-            import yaml
-            pipeline_yaml = yaml.safe_load(pipeline_file)
-            pipeline_yaml['metadata']['name']=item.name+'-'+uuid.uuid4().hex[:4]
-            pipeline_yaml['metadata']['namespace'] = 'pipeline'
-            pipeline_file = yaml.safe_dump(pipeline_yaml)
-        except Exception as e:
-            print(e)
-
-        file.write(bytes(pipeline_file, encoding='utf-8'))
-        file.close()
-        response = make_response(send_from_directory(file_dir, file_name, as_attachment=True, conditional=True))
-
-        response.headers[
-            "Content-Disposition"
-        ] = f"attachment; filename={file_name}"
-        logging.info("Ready to return response")
-        return response
-
+    
 
 
 
@@ -1116,13 +1101,16 @@ class Pipeline_ModelView_Base():
         #     except Exception as e:
         #         print(e)
 
+
         db.session.commit()
         print(pipeline_id)
+        url = '/static/appbuilder/vison/index.html?pipeline_id=%s'%pipeline_id  # 前后端集成完毕，这里需要修改掉
         data = {
-            "url": '/static/appbuilder/vison/index.html?pipeline_id=%s'%pipeline_id  # 前后端集成完毕，这里需要修改掉
+            "url": url
         }
+        return redirect('/frontend/showOutLink?url=%s'%urllib.parse.quote(url, safe=""))
         # 返回模板
-        return self.render_template('link.html', data=data)
+        # return self.render_template('link.html', data=data)
 
 
     # # @event_logger.log_this
@@ -1189,7 +1177,7 @@ class Pipeline_ModelView_Base():
     def copy_db(self,pipeline):
         new_pipeline = pipeline.clone()
         expand = json.loads(pipeline.expand) if pipeline.expand else {}
-        new_pipeline.name = new_pipeline.name.replace('_', '-') + "-copy-" + uuid.uuid4().hex[:4]
+        new_pipeline.name = new_pipeline.name.replace('_', '-') + "-" + uuid.uuid4().hex[:4]
         new_pipeline.created_on = datetime.datetime.now()
         new_pipeline.changed_on = datetime.datetime.now()
         db.session.add(new_pipeline)
@@ -1257,7 +1245,6 @@ class Pipeline_ModelView_Base():
 
         return redirect(request.referrer)
 
-
 class Pipeline_ModelView(Pipeline_ModelView_Base,MyappModelView,DeleteMixin):
     datamodel = SQLAInterface(Pipeline)
     # base_order = ("changed_on", "desc")
@@ -1265,17 +1252,31 @@ class Pipeline_ModelView(Pipeline_ModelView_Base,MyappModelView,DeleteMixin):
 
 appbuilder.add_view(Pipeline_ModelView,"任务流",href="/pipeline_modelview/list/?_flt_0_created_by=",icon = 'fa-sitemap',category = '训练')
 
+
 # 添加api
 class Pipeline_ModelView_Api(Pipeline_ModelView_Base,MyappModelRestApi):
     datamodel = SQLAInterface(Pipeline)
     route_base = '/pipeline_modelview/api'
-    show_columns = ['project','name','describe','namespace','schedule_type','cron_time','node_selector','image_pull_policy','depends_on_past','max_active_runs','parallelism','global_env','dag_json','pipeline_file','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand']
-    # show_columns = ['name','describe','project','dag_json','namespace','global_env','schedule_type','cron_time','pipeline_file','pipeline_argo_id','version_id','run_id','node_selector','image_pull_policy','parallelism','alert_status']
-    list_columns = show_columns
-    add_columns = ['project','name','describe','namespace','schedule_type','cron_time','node_selector','image_pull_policy','depends_on_past','max_active_runs','parallelism','dag_json','global_env','expand']
-    edit_columns = add_columns
+    # show_columns = ['project','name','describe','namespace','schedule_type','cron_time','node_selector','depends_on_past','max_active_runs','parallelism','global_env','dag_json','pipeline_file_html','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand']
+    list_columns = ['id','project','pipeline_url','creator','modified']
+    add_columns = ['project','name','describe','namespace','schedule_type','cron_time','node_selector','depends_on_past','max_active_runs','parallelism','global_env','alert_status','expand']
+    edit_columns = ['project','name','describe','namespace','schedule_type','cron_time','node_selector','depends_on_past','max_active_runs','parallelism','dag_json','global_env','alert_status','expand','created_by']
+
+    related_views = [Task_ModelView_Api,]
+
+    def pre_add_get(self):
+        self.default_filter = {
+            "created_by": g.user.id
+        }
+
+    add_form_query_rel_fields = {
+        "project": [["name", Project_Join_Filter, 'org']]
+    }
+    edit_form_query_rel_fields=add_form_query_rel_fields
+
 
 appbuilder.add_api(Pipeline_ModelView_Api)
+
 
 
 

@@ -84,12 +84,20 @@ class Service_Filter(MyappFilter):
         return query.filter(self.model.project_id.in_(join_projects_id))
 
 
+
+
 class Service_ModelView_base():
     datamodel = SQLAInterface(Service)
-    help_url = conf.get('HELP_URL', {}).get(datamodel.obj.__tablename__, '') if datamodel else ''
-    show_columns = ['name', 'label','images','volume_mount','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host_url','link']
+
+    show_columns = ['project','name', 'label','images','volume_mount','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host_url','link']
     add_columns = ['project','name', 'label','images','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host']
-    list_columns = ['project','name_url','host_url','ip','creator','modified','deploy']
+    list_columns = ['project','name_url','host_url','ip','deploy','creator','modified']
+    cols_width={
+        "name_url":{"type": "ellip2", "width": 200},
+        "host_url": {"type": "ellip2", "width": 400},
+        "ip": {"type": "ellip2", "width": 300},
+        "deploy": {"type": "ellip2", "width": 300}
+    }
     edit_columns = ['project','name', 'label','images','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','volume_mount','host',]
     base_order = ('id','desc')
     order_columns = ['id']
@@ -166,7 +174,8 @@ class Service_ModelView_base():
         service = db.session.query(Service).filter_by(id=service_id).first()
         self.delete_old_service(service.name,service.project.cluster)
         flash('服务清理完成', category='warning')
-        return redirect('/service_modelview/list/')
+        return redirect(conf.get('MODEL_URLS',{}).get('service',''))
+
 
     @expose('/deploy/<service_id>',methods=['POST',"GET"])
     def deploy(self,service_id):
@@ -183,11 +192,11 @@ class Service_ModelView_base():
         namespace = conf.get('SERVICE_NAMESPACE')
 
         volume_mount = service.volume_mount
-
+        labels = {"app":service.name,"user":service.created_by.username,"pod-type":"service"}
         k8s_client.create_deployment(namespace=namespace,
                               name=service.name,
                               replicas=service.replicas,
-                              labels={"app":service.name,"username":service.created_by.username},
+                              labels=labels,
                               command=['bash','-c',service.command] if service.command else None,
                               args=None,
                               volume_mount=volume_mount,
@@ -214,7 +223,8 @@ class Service_ModelView_base():
             namespace=namespace,
             name=service.name,
             username=service.created_by.username,
-            ports=ports
+            ports=ports,
+            selector=labels
         )
         # 如果域名配置的gateway，就用这个
         host = service.name+"."+conf.get('SERVICE_DOMAIN')
@@ -235,7 +245,7 @@ class Service_ModelView_base():
         SERVICE_EXTERNAL_IP = conf.get('SERVICE_EXTERNAL_IP', None)
         if not SERVICE_EXTERNAL_IP and service.project.expand:
             SERVICE_EXTERNAL_IP = json.loads(service.project.expand).get('SERVICE_EXTERNAL_IP', SERVICE_EXTERNAL_IP)
-            if type(SERVICE_EXTERNAL_IP)==str:
+            if type(SERVICE_EXTERNAL_IP) == str:
                 SERVICE_EXTERNAL_IP = [SERVICE_EXTERNAL_IP]
 
         if SERVICE_EXTERNAL_IP:
@@ -246,10 +256,9 @@ class Service_ModelView_base():
                 name=service_external_name,
                 username=service.created_by.username,
                 ports=service_ports,
-                selector={"app": service.name, 'user': service.created_by.username},
+                selector=labels,
                 externalIPs=SERVICE_EXTERNAL_IP
             )
-
 
         # # 创建虚拟服务做代理
         # crd_info = conf.get('CRD_INFO', {}).get('virtualservice', {})
@@ -306,31 +315,17 @@ class Service_ModelView_base():
         # # return crd
 
 
-
         flash('服务部署完成',category='warning')
-        return redirect('/service_modelview/list/')
+        return redirect(conf.get("MODEL_URLS",{}).get("service",'/'))
 
 
 
-    @expose('/link/<service_id>')
-    def link(self, service_id):
-        service = db.session.query(Service).filter_by(id=service_id).first()
-        url = "http://" + service.name + "." + conf.get('SERVICE_DOMAIN')
-        if service.host:
-            if 'http://' in service.host or 'https://' in service.host:
-                url = service.host
-            else:
-                url = "http://"+service.host
-        data={
-            "url":url   # 'http://127.0.0.1:8080/video_sample/' #
-        }
 
-        # 返回模板
-        return self.render_template('link.html', data=data)
 
 
 class Service_ModelView(Service_ModelView_base,MyappModelView,DeleteMixin):
     datamodel = SQLAInterface(Service)
+
 appbuilder.add_view(Service_ModelView,"内部服务",icon = 'fa-internet-explorer',category = '服务化')
 
 
@@ -339,3 +334,5 @@ class Service_ModelView_Api(Service_ModelView_base,MyappModelRestApi):
     route_base = '/service_modelview/api'
 
 appbuilder.add_api(Service_ModelView_Api)
+
+

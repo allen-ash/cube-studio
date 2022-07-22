@@ -92,6 +92,8 @@ class Task_ModelView_Base():
     edit_columns = add_columns
     base_order = ('id','desc')
     order_columns = ['id']
+    search_columns = ['pipeline']
+
     conv = GeneralModelConverter(datamodel)
 
     add_form_extra_fields = {
@@ -184,7 +186,7 @@ class Task_ModelView_Base():
 
     }
 
-    add_form_extra_fields['resource_gpu'] = StringField(_(datamodel.obj.lab('resource_gpu')), default=0,
+    add_form_extra_fields['resource_gpu'] = StringField(_(datamodel.obj.lab('resource_gpu')), default='0',
                                                                   description='gpu的资源使用限制(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100),目前支持T4/V100/A100/VGPU',
                                                                   widget=BS3TextFieldWidget())
 
@@ -310,6 +312,8 @@ class Task_ModelView_Base():
     # @pysnooper.snoop(watch_explode=('item'))
     def pre_update(self, item):
         item.name = item.name.replace('_', '-')[0:54].lower()
+        if item.resource_gpu:
+            item.resource_gpu=str(item.resource_gpu).upper()
         if item.job_template is None:
             raise MyappException("Job Template 为必选")
         # if item.job_template.volume_mount and item.job_template.volume_mount not in item.volume_mount:
@@ -363,6 +367,7 @@ class Task_ModelView_Base():
     #         item.pipeline.pipeline_argo_id = pipeline_argo_id
     #     if version_id:
     #         item.pipeline.version_id = version_id
+    #     # db.session.update(item)
     #     db.session.commit()
 
 
@@ -467,7 +472,7 @@ class Task_ModelView_Base():
             hostAliases+="\n"+task.job_template.hostAliases
         k8s_client.create_debug_pod(namespace,
                              name=pod_name,
-                             labels={"pipeline": task.pipeline.name, 'task': task.name, 'run-rtx': g.user.username,'run-id': run_id},
+                             labels={"pipeline": task.pipeline.name, 'task': task.name, 'user': g.user.username,'run-id': run_id,'pod-type':"task"},
                              command=command,
                              args=args,
                              volume_mount=volume_mount,
@@ -488,8 +493,11 @@ class Task_ModelView_Base():
         task = db.session.query(Task).filter_by(id=task_id).first()
         if task.job_template.name != conf.get('CUSTOMIZE_JOB'):
             if not g.user.is_admin() and task.job_template.created_by.username!=g.user.username:
-                flash('仅管理员或当前任务模板创建者，可启动debug模式', 'warning')
-                return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
+                message='仅管理员或当前任务模板创建者，可启动debug模式'
+                flash(message, 'warning')
+                return self.response(400,**{"status":1,"result":{},"message":message})
+
+                # return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
 
 
         from myapp.utils.py.py_k8s import K8s
@@ -523,7 +531,7 @@ class Task_ModelView_Base():
                 args=None
             )
 
-        try_num=5
+        try_num=30
         while(try_num>0):
             pod = k8s_client.get_pods(namespace=namespace, pod_name=pod_name)
             # print(pod)
@@ -535,8 +543,10 @@ class Task_ModelView_Base():
             try_num=try_num-1
             time.sleep(2)
         if try_num==0:
-            flash('启动时间过长，一分钟后重试','warning')
-            return redirect('/pipeline_modelview/web/%s'%str(task.pipeline.id))
+            message='启动时间过长，一分钟后重试'
+            flash(message,'warning')
+            return self.response(400, **{"status": 1, "result": {}, "message": message})
+            # return redirect('/pipeline_modelview/web/%s'%str(task.pipeline.id))
 
 
         return redirect("/myapp/web/debug/%s/%s/%s/%s"%(task.pipeline.project.cluster['NAME'],namespace,pod_name,pod_name))
@@ -569,8 +579,10 @@ class Task_ModelView_Base():
                 pod = k8s_client.get_pods(namespace=namespace, pod_name=pod_name)
                 check_date = datetime.datetime.now()
                 if (check_date-delete_time).seconds>60:
-                    flash("超时，请稍后重试",category='warning')
-                    return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
+                    message="超时，请稍后重试"
+                    flash(message,category='warning')
+                    return self.response(400, **{"status": 1, "result": {}, "message": message})
+                    # return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
 
 
 
@@ -631,8 +643,10 @@ class Task_ModelView_Base():
             try_num = try_num - 1
             time.sleep(2)
         if try_num == 0:
-            flash('启动时间过长，一分钟后重试', 'warning')
-            return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
+            message = '启动时间过长，一分钟后重试'
+            flash(message, 'warning')
+            return self.response(400, **{"status": 1, "result": {}, "message": message})
+            # return redirect('/pipeline_modelview/web/%s' % str(task.pipeline.id))
 
         return redirect("/myapp/web/log/%s/%s/%s" % (task.pipeline.project.cluster['NAME'],namespace, pod_name))
 

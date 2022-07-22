@@ -86,9 +86,14 @@ class Job_Tempalte_Filter(MyappFilter):
 class Job_Template_ModelView_Base():
     datamodel = SQLAInterface(Job_Template)
     label_title='任务模板'
-    check_redirect_list_url = '/job_template_modelview/list/?_flt_2_name='
-    help_url = conf.get('HELP_URL', {}).get(datamodel.obj.__tablename__, '') if datamodel else ''
+    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('job_template','')
+
     list_columns = ['project','name_title','version','creator','modified']
+    cols_width = {
+        "name_title":{"type": "ellip2", "width": 300},
+        "name": {"type": "ellip2", "width": 400},
+        "version": {"type": "ellip2", "width": 100},
+    }
     show_columns = ['project','name','version','describe','images_url','workdir','entrypoint','args_html','demo_html','env','hostAliases','privileged','expand_html']
     add_columns = ['project','images','name','version','describe','workdir','entrypoint','volume_mount','job_args_definition','args','env','hostAliases','privileged','accounts','demo','expand']
     edit_columns = add_columns
@@ -132,7 +137,7 @@ class Job_Template_ModelView_Base():
         ),
         "args": StringField(
             _(datamodel.obj.lab('args')),
-            description='使用job模板，task需要填写的参数，需要按Job Args Definition的标准写入',
+            description=Markup(f'使用job模板，task需要填写的参数，需要按Job Args Definition的标准写入，<a target="_blank" href="%s">参考文章</a>'%('https://github.com/tencentmusic/cube-studio/tree/master/job-template',)),
             widget=MyBS3TextAreaFieldWidget(rows=10),  # 传给widget函数的是外层的field对象，以及widget函数的参数
         ),
         "env": StringField(
@@ -358,7 +363,7 @@ class Job_Template_ModelView_Base():
             hostAliases=job_template.hostAliases+"\n"+conf.get('HOSTALIASES','')
             k8s.create_debug_pod(namespace,
                                  name=pod_name,
-                                 labels={'run-rtx': g.user.username},
+                                 labels={"app":"docker","user":g.user.username,"pod-type":"job-template"},
                                  command=None,
                                  args=args,
                                  volume_mount=volume_mount,
@@ -463,11 +468,31 @@ appbuilder.add_view(Job_Template_ModelView,"任务模板",href="/job_template_mo
 class Job_Template_ModelView_Api(Job_Template_ModelView_Base,MyappModelRestApi):
     datamodel = SQLAInterface(Job_Template)
     route_base = '/job_template_modelview/api'
-    add_columns = ['project', 'images', 'name', 'version', 'describe', 'args', 'env','hostAliases', 'privileged','accounts', 'demo','expand']
+    # add_columns = ['project', 'images', 'name', 'version', 'describe', 'args', 'env','hostAliases', 'privileged','accounts', 'demo','expand']
+    add_columns = ['project', 'images', 'name', 'version', 'describe', 'workdir', 'entrypoint', 'volume_mount','args', 'env', 'hostAliases', 'privileged', 'accounts', 'expand']
     edit_columns = add_columns
-    list_columns = ['project','name','version','describe','images','workdir','entrypoint','args','demo','env','hostAliases','privileged','accounts','created_by','changed_by','created_on','changed_on','expand']
-    show_columns = ['project','name','version','describe','images_url','workdir','entrypoint','args','demo','env','hostAliases','privileged','expand']
+    # list_columns = ['project','name','version','creator','modified']
+    list_columns = ['project', 'name', 'version', 'describe', 'images', 'workdir', 'entrypoint', 'args', 'demo', 'env',
+                    'hostAliases', 'privileged', 'accounts', 'created_by', 'changed_by', 'created_on', 'changed_on',
+                    'expand']
+    show_columns = ['project','name','version','describe','images','workdir','entrypoint','args','demo','env','hostAliases','privileged','expand']
 
 appbuilder.add_api(Job_Template_ModelView_Api)
+
+class Job_Template_fab_ModelView_Api(Job_Template_ModelView_Base,MyappModelRestApi):
+    datamodel = SQLAInterface(Job_Template)
+    route_base = '/job_template_fab_modelview/api'
+    # add_columns = ['project', 'images', 'name', 'version', 'describe', 'args', 'env','hostAliases', 'privileged','accounts', 'demo','expand']
+    add_columns = ['project', 'images', 'name', 'version', 'describe', 'workdir', 'entrypoint', 'volume_mount','args', 'env', 'hostAliases', 'privileged', 'accounts', 'expand']
+
+    edit_columns = add_columns
+    list_columns = ['project','name','version','creator','modified']
+    # list_columns = ['project', 'name', 'version', 'describe', 'images', 'workdir', 'entrypoint', 'args', 'demo', 'env',
+    #                 'hostAliases', 'privileged', 'accounts', 'created_by', 'changed_by', 'created_on', 'changed_on',
+    #                 'expand']
+    show_columns = ['project', 'images', 'name', 'version', 'describe', 'workdir', 'entrypoint', 'volume_mount','args', 'env', 'hostAliases', 'privileged', 'accounts', 'expand']
+
+
+appbuilder.add_api(Job_Template_fab_ModelView_Api)
 
 

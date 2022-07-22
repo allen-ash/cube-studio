@@ -2123,6 +2123,27 @@ def fix_task_position(pipeline,tasks,expand_tasks):
     return expand_tasks
 
 
+def hive_create_sql_demo():
+    sql = '''create table if not exists test_table(
+    ftime int comment '分区时间',
+    event_time string comment '事件时间戳'
+    ) comment 'test'
+    PARTITION BY LIST( ftime )
+            (
+                PARTITION p_20210925 VALUES IN ( 20210925 ),
+                PARTITION default
+            );
+'''
+    return sql
+
+
+import shlex, subprocess
+def run_shell(shell):
+    cmd = subprocess.Popen(shell, stdin=subprocess.PIPE, stderr=sys.stderr, close_fds=True,
+                           stdout=sys.stdout, universal_newlines=True, shell=True, bufsize=1)
+
+    cmd.communicate()
+    return cmd.returncode
 
 # import yaml
 # # @pysnooper.snoop(watch_explode=())

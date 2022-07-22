@@ -360,7 +360,8 @@ EMAIL_REPORT_FROM_ADDRESS = "reports@myapp.org"
 
 # Send bcc of all reports to this address. Set to None to disable.
 # This is useful for maintaining an audit trail of all email deliveries.
-
+# 响应支持中文序列化
+JSON_AS_ASCII = False
 
 # User credentials to use for generating reports
 # This user should have permissions to browse all the dashboards and
@@ -396,7 +397,8 @@ TALISMAN_CONFIG = {
     "force_https": True,
     "force_https_permanent": False,
 }
-
+# 前端静态文件的默认缓存时间
+SEND_FILE_MAX_AGE_DEFAULT=300
 
 try:
     if CONFIG_PATH_ENV_VAR in os.environ:
@@ -437,15 +439,17 @@ def get_env_variable(var_name, default=None):
             error_msg = 'The environment variable {} was missing, abort...'.format(var_name)
             raise EnvironmentError(error_msg)
 
+# 当前控制器所在的集群
+ENVIRONMENT=get_env_variable('ENVIRONMENT','DEV').lower()
 
-# 数据库连接池的配置
-SQLALCHEMY_POOL_SIZE = 100
+SQLALCHEMY_POOL_SIZE = 300
 SQLALCHEMY_POOL_RECYCLE = 300  # 超时重连， 必须小于数据库的超时终端时间
-SQLALCHEMY_MAX_OVERFLOW = 300
+SQLALCHEMY_MAX_OVERFLOW = 800
 SQLALCHEMY_TRACK_MODIFICATIONS=False
 
+
 # redis的配置
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'admin')   #
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'admin')   # default must set None
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', '6379')
 
@@ -461,7 +465,7 @@ RESULTS_BACKEND = RedisCache(
 class CeleryConfig(object):
     # 任务队列
     BROKER_URL =  'redis://:%s@%s:%s/0'%(REDIS_PASSWORD,REDIS_HOST,str(REDIS_PORT)) if REDIS_PASSWORD else 'redis://%s:%s/0'%(REDIS_HOST,str(REDIS_PORT))
-    # celery_task的定义模块地址
+    # celery_task的定义模块
     CELERY_IMPORTS = (
         'myapp.tasks',
     )
@@ -505,7 +509,12 @@ class CeleryConfig(object):
             'rate_limit': '1/s',
             'ignore_result': True,
         },
-        # 上传workflow信息
+		# 异步升级服务
+        'task.upgrade_service': {
+            'rate_limit': '1/s',
+            'ignore_result': True,
+        },
+		# 上传workflow信息
         'task.upload_workflow': {
             'rate_limit': '10/s',
             'ignore_result': True,
@@ -515,46 +524,46 @@ class CeleryConfig(object):
 
     # 定时任务的配置项，key为celery_task的name，值是调度配置
     CELERYBEAT_SCHEDULE = {
-        'task_task1': {
+        'task_delete_workflow': {
             'task': 'task.delete_workflow',   # 定时删除旧的workflow
             # 'schedule': 10.0,
             'schedule': crontab(minute='1'),
         },
-        'task_task2': {
+        'task_make_timerun_config': {
             'task': 'task.make_timerun_config',  # 定时产生定时任务的yaml信息
             # 'schedule': 10.0,     #10s中执行一次
             'schedule': crontab(minute='*/5'),
         },
-        'task_task4': {
+        'task_delete_old_data': {
             'task': 'task.delete_old_data',   # 定时删除旧数据
             # 'schedule': 100.0,     #10s中执行一次
             'schedule': crontab(minute='1', hour='1'),
         },
-        'task_task5': {
+        'task_delete_notebook': {
             'task': 'task.delete_notebook',  # 定时停止notebook
             # 'schedule': 10.0,
             'schedule': crontab(minute='1', hour='4'),
         },
-        # 'task_task6': {
+        # 'task_push_workspace_size': {
         #     'task': 'task.push_workspace_size',   # 定时推送用户文件大小
         #     # 'schedule': 10.0,
         #     'schedule': crontab(minute='10', hour='10'),
         # },
-        'task_task6':{
+        'task_check_pipeline_run':{
             'task':"task.check_pipeline_run",   # 定时检查pipeline的运行时长
             'schedule': crontab(minute='10', hour='11'),
         },
-        'task_task8': {
+        'task_delete_debug_docker': {
             'task': 'task.delete_debug_docker',   # 定时删除debug的pod
             # 'schedule': 10.0,
             'schedule': crontab(minute='30', hour='22'),
         },
-        'task_task9': {
+        'task_watch_gpu': {
             'task': 'task.watch_gpu',   # 定时推送gpu的使用情况
             # 'schedule': 10.0,
             'schedule': crontab(minute='10',hour='8-23/2'),
         },
-        'task_task10': {
+        'task_adjust_node_resource': {
             'task': 'task.adjust_node_resource',  # 定时在多项目组间进行资源均衡
             # 'schedule': 10.0,
             'schedule': crontab(minute='*/10'),
@@ -566,7 +575,7 @@ DOCUMENTATION_URL='https://github.com/tencentmusic/cube-studio/tree/master/docs/
 
 ROBOT_PERMISSION_ROLES=[]   # 角色黑名单
 
-FAB_API_MAX_PAGE_SIZE=100    # 最大翻页数目，不设置的话就会是20
+FAB_API_MAX_PAGE_SIZE=1000    # 最大翻页数目，不设置的话就会是20
 CACHE_DEFAULT_TIMEOUT = 10*60  # 缓存默认过期时间，10分钟才过期
 
 # CACHE_CONFIG = {
@@ -710,8 +719,6 @@ HELP_URL={
 
 # 不使用模板中定义的镜像而直接使用用户镜像的模板名称
 CUSTOMIZE_JOB='自定义镜像'
-# 推送必带接收人
-PUSH_BCC_ADDRESS = 'admin'
 # admin管理员用户
 ADMIN_USER='admin'
 # pipeline任务的运行空间，目前必填pipeline
@@ -793,6 +800,8 @@ HOSTALIASES='''
 # 默认服务代理的ip
 SERVICE_EXTERNAL_IP=[]
 
+# json响应是否按字母顺序排序
+JSON_SORT_KEYS=False
 # 链接菜单
 ALL_LINKS=[
     {
@@ -868,8 +877,22 @@ GRAFANA_CLUSTER_PATH="/grafana/d/all-node/all-node?var-org="
 # 节点资源监控地址
 GRAFANA_NODE_PATH="/grafana/d/node/node?var-node="
 
-# 当前控制器所在的集群
-ENVIRONMENT=get_env_variable('ENVIRONMENT','DEV').lower()
+
+MODEL_URLS = {
+    "notebook": "/frontend/train/dev/notebook",
+    "docker": "/frontend/train/dev/docker",
+    "repository": "/frontend/train/train_template/docker_repository",
+    "template_images": "/frontend/train/train_template/template_images",
+    "job_template": "/frontend/train/train_template/job_template",
+    "pipeline": "/frontend/train/train_task/pipeline",
+    "runhistory": "/frontend/train/train_task/runhistory",
+    "workflow": "/frontend/train/train_task/workflow",
+    "nni": "/frontend/train/train_hyperparameter/nni",
+    "service": "/frontend/train/service/service",
+    "inferenceservice": "/frontend/train/service/inferenceservice",
+}
+
+
 # 所有训练集群的信息
 CLUSTERS={
     # 和project expand里面的名称一致

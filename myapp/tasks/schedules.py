@@ -18,7 +18,6 @@ from dateutil.tz import tzlocal
 import shutil
 import os,sys,io,json,datetime,time
 import subprocess
-from datetime import datetime, timedelta
 import os
 import sys
 import time
@@ -39,6 +38,7 @@ from myapp.models.model_job import (
     Task
 )
 from myapp.models.model_notebook import Notebook
+from myapp.models.model_serving import InferenceService
 from myapp.security import (
     MyUser
 )
@@ -314,7 +314,10 @@ def delete_notebook(task):
         # 删除vscode的pod
         try:
             alert_time = datetime.datetime.now() - datetime.timedelta(seconds=timeout) + datetime.timedelta(days=1)
-            notebooks = dbsession.query(Notebook).filter(Notebook.changed_on < alert_time).all()   # 需要删除或者需要通知续期的notebook
+            # notebooks = dbsession.query(Notebook).filter(Notebook.changed_on < alert_time).all()   # 需要删除或者需要通知续期的notebook
+
+            # 获取过期的gpu notebook  删除
+            notebooks = dbsession.query(Notebook).filter(Notebook.changed_on < alert_time).filter(Notebook.resource_gpu!='0').all()
             for notebook in notebooks:
                 if notebook.changed_on < (datetime.datetime.now() - datetime.timedelta(seconds=timeout)):
                     k8s_client = K8s(notebook.project.cluster.get('KUBECONFIG',''))
@@ -338,6 +341,7 @@ def delete_notebook(task):
 @celery_app.task(name="task.delete_debug_docker", bind=True)
 def delete_debug_docker(task):
     clusters = conf.get('CLUSTERS',{})
+    # 删除完成的任务
     for cluster_name in clusters:
         cluster = clusters[cluster_name]
         notebook_namespace = conf.get('NOTEBOOK_NAMESPACE')
@@ -352,7 +356,75 @@ def delete_debug_docker(task):
                     k8s_client.delete_workflow(all_crd_info=conf.get("CRD_INFO", {}), namespace=pipeline_namespace,run_id=run_id)
                     k8s_client.delete_pods(namespace=pipeline_namespace, labels={"run-id": run_id})
 
-        push_message(conf.get('ADMIN_USER', '').split(','), 'debug pod 清理完毕')
+    # 删除debug和test的服务
+    for cluster_name in clusters:
+        cluster = clusters[cluster_name]
+        namespace = conf.get('SERVICE_NAMESPACE')
+        k8s_client = K8s(cluster.get('KUBECONFIG',''))
+        with session_scope(nullpool=True) as dbsession:
+            try:
+                inferenceservices = dbsession.query(InferenceService).all()
+                for inferenceservic in inferenceservices:
+                    try:
+                        name = 'debug-'+inferenceservic.name
+                        k8s_client.delete_deployment(namespace=namespace, name=name)
+                        k8s_client.delete_configmap(namespace=namespace, name=name)
+                        k8s_client.delete_service(namespace=namespace, name=name)
+                        k8s_client.delete_istio_ingress(namespace=namespace, name=name)
+                        if inferenceservic.model_status=='debug':
+                            inferenceservic.model_status='offline'
+                            dbsession.commit()
+
+                        name = 'test-' + inferenceservic.name
+                        k8s_client.delete_deployment(namespace=namespace, name=name)
+                        k8s_client.delete_configmap(namespace=namespace, name=name)
+                        k8s_client.delete_service(namespace=namespace, name=name)
+                        k8s_client.delete_istio_ingress(namespace=namespace, name=name)
+                        if inferenceservic.model_status == 'test':
+                            inferenceservic.model_status = 'offline'
+                            dbsession.commit()
+
+                    except Exception as e1:
+                        print(e1)
+
+            except Exception as e:
+                print(e)
+
+    push_message(conf.get('ADMIN_USER', '').split(','), 'debug pod 清理完毕')
+
+    # 删除 notebook 容器
+    print('begin delete idex')
+    namespace = conf.get('NOTEBOOK_NAMESPACE')
+    for cluster_name in clusters:
+        cluster = clusters[cluster_name]
+        k8s_client = K8s(cluster.get('KUBECONFIG',''))
+        pods = k8s_client.get_pods(namespace=namespace,labels={'pod-type':"jupyter"})
+        for pod in pods:
+            try:
+                k8s_client.v1.delete_namespaced_pod(pod['name'], namespace,grace_period_seconds=0)
+            except Exception as e:
+                print(e)
+            try:
+                k8s_client.v1.delete_namespaced_service(pod['name'], namespace, grace_period_seconds=0)
+            except Exception as e:
+                print(e)
+            try:
+                object_info = conf.get("CRD_INFO", {}).get('virtualservice', {})
+                k8s_client.delete_crd(group=object_info['group'], version=object_info['version'],plural=object_info['plural'], namespace=namespace,name=pod['name'])
+
+            except Exception as e:
+                print(e)
+
+    push_message(conf.get('ADMIN_USER', '').split(','), 'idex jupter pod 清理完毕')
+
+    # 删除调试镜像的pod 和commit pod
+    namespace = conf.get('NOTEBOOK_NAMESPACE')
+    for cluster_name in clusters:
+        cluster = clusters[cluster_name]
+        k8s_client = K8s(cluster.get('KUBECONFIG',''))
+        k8s_client.delete_pods(namespace=namespace,labels={'pod-type':"docker"})
+
+    push_message(conf.get('ADMIN_USER', '').split(','), 'docker 调试构建 pod 清理完毕')
 
 
 # 推送微信消息
@@ -364,11 +436,6 @@ def deliver_message(pipeline,message=''):
     alert_users = [alert_user.strip() for alert_user in alert_users if alert_user.strip()]
     receivers+=alert_users
     # 失败的时候将详细推送给管理员
-    # if message:
-    #     bcc = conf.get('PUSH_BCC_ADDRESS','')  # 暗抄送列表
-    #     bcc = bcc.split(',')
-    #     for bc in bcc:
-    #         receivers.append(bc)
     receivers = list(set(receivers))
     if not receivers:
         print('no receivers')
@@ -856,28 +923,42 @@ def check_pipeline_run(task):
     check_pipeline_resource()
 
 
-# 获取目录的大小
+@pysnooper.snoop()
 def get_dir_size(dir):
-    dir_size={}
-    files = os.listdir(dir)
-    for file in files:
-        filePath = dir + "/" + file
-        if os.path.isdir(filePath):
-            """disk usage in human readable format (e.g. '2,1GB')"""
-            size = subprocess.check_output(['du','-sh', filePath]).split()[0].decode('utf-8')
-            print(file, size)
-            if 'K' in size:
-                size=float(size.replace('K',''))
-            elif 'M' in size:
-                size=float(size.replace('M',''))*1024
-            elif 'G' in size:
-                size=float(size.replace('G',''))*1024*1024
-            elif 'T' in size:
-                size=float(size.replace('T',''))*1024*1024*1024
+    dir_size = {}
+    try:
+        if os.path.isdir(dir):
+            command = 'ls -lh %s'%dir
+            result = subprocess.getoutput(command)
+            # print(result)
+            rows = result.split('\n')
+            for row in rows:
+                row =[item for item in row.split(' ') if item]
+                # print(row)
+                if len(row)==9:
+                    size,file_name = row[4],row[8]
+                    # print(size,username)
 
-            dir_size[file]=round(float(size)/1024/1024,2)
+                    if 'K' in size:
+                        size = float(size.replace('K', ''))
+                    elif 'M' in size:
+                        size = float(size.replace('M', '')) * 1024
+                    elif 'G' in size:
+                        size = float(size.replace('G', '')) * 1024 * 1024
+                    elif 'T' in size:
+                        size = float(size.replace('T', '')) * 1024 * 1024 * 1024
 
+                    dir_size[file_name] = round(float(size) / 1024 / 1024, 2)
+                    # dir_size[file_name] = float(size) / 1024 / 1024
+
+            # size = subprocess.check_output(command)
+            # print(size)
+    except Exception as e:
+        print(e)
+
+    print(dir_size)
     return dir_size
+
 
 
 @celery_app.task(name="task.push_workspace_size", bind=True)
@@ -894,14 +975,16 @@ def push_workspace_size(task):
             dir_size = dir_sizes[i]
             message+=str(dir_size[0])+":"+str(dir_size[1])+"G\n"
 
-        push_admin(message)
+        # push_admin(message)
 
         for dir_size in dir_sizes:
             user = dir_size[0]
             size = float(dir_size[1])
-            if size>1200:   # 如果操作1200G，就提醒
+            if size>2500:   # 如果操作1200G，就提醒
                 try:
-                    push_message([user],'检测到您的工作目录当前占用磁盘大小为%sG。目前每个用户工作目录上限为1500G，超出后部分功能可能受限，请及时进入个人notebook清理旧数据'%str(size))
+                    push_message([user],'%s 检测到您的工作目录当前占用磁盘大小为%sG。目前每个用户工作目录上限为2500G，超出后部分功能可能受限，请及时进入个人notebook清理旧数据'%(user,str(size)))
+                    push_admin('%s 检测到您的工作目录当前占用磁盘大小为%sG。目前每个用户工作目录上限为2500G，超出后部分功能可能受限，请及时进入个人notebook清理旧数据' % (user,str(size)))
+
                 except Exception as e:
                     print(e)
 
@@ -935,7 +1018,6 @@ def watch_gpu(task):
 
 # 各项目组之间相互均衡的方案，一台机器上可能并不能被一个项目组占完，所以可能会跑多个项目组的任务
 @celery_app.task(name="task.adjust_node_resource", bind=True)
-@pysnooper.snoop()
 def adjust_node_resource(task):
     clusters = conf.get('CLUSTERS', {})
     for cluster_name in clusters:
@@ -1096,4 +1178,114 @@ def adjust_node_resource(task):
             push_message(conf.get('ADMIN_USER').split(','), '集群 %s 调整项目组 %s 下 gpu机器 %s 到项目组%s' % (cluster_name, min_gpu_org, ','.join(adjust_node), max_gpu_org))
             k8s_client.label_node(adjust_node,labels={"org":max_gpu_org})
             return
+
+
+# get_dir_size('/data/k8s/kubeflow/pipeline/workspace')
+@pysnooper.snoop()
+def get_deployment_node_selector(name,namespace):
+    from kubernetes import client, config, watch
+    from kubernetes.client.models import v1_pod, v1_object_meta, v1_pod_spec, v1_deployment, v1_deployment_spec
+    exist_dp = client.AppsV1Api().read_namespaced_deployment(name=name, namespace=namespace)
+
+    node_selector = {}
+    try:
+        # aa=client.V1NodeSelector
+        if exist_dp.spec.template.spec.affinity.node_affinity and exist_dp.spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution:
+            match_expressions = exist_dp.spec.template.spec.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms
+            match_expressions = [ex.match_expressions for ex in match_expressions]
+            match_expressions = match_expressions[0]
+            for match_expression in match_expressions:
+                if match_expression.operator == 'In':
+                    node_selector[match_expression.key] = match_expression.values[0]
+                if match_expression.operator == 'Equal':
+                    node_selector[match_expression.key] = match_expression.values
+
+    except Exception as e:
+        pass
+
+        # print(e)
+    if exist_dp.spec.template.spec.node_selector:
+        node_selector.update(exist_dp.spec.template.spec.node_selector)
+
+    print(node_selector)
+
+    pass
+
+
+# # 不同优先级的服务之间调节算力
+@celery_app.task(name="task.adjust_service_resource", bind=True)
+@pysnooper.snoop(watch_explode=())
+def adjust_service_resource(task):
+    from kubernetes import client, config, watch
+    cluster_name='tke'
+    namespace = conf.get('SERVICE_NAMESPACE')
+    cluster = conf.get('CLUSTERS', {})[cluster_name]
+    with session_scope(nullpool=True) as dbsession:
+        try:
+            k8s_client = K8s(cluster.get('KUBECONFIG',''))
+            hpas = client.AutoscalingV2beta1Api().list_namespaced_horizontal_pod_autoscaler(namespace=namespace).items
+            for hpa in hpas:
+                inferenceserving = dbsession.query(InferenceService).filter_by(name=hpa.metadata.name).filter_by(model_status='online').first()
+                if not inferenceserving:
+                    message = cluster_name + "：请删除hpa，因" + hpa.metadata.name + '服务下线或者不存在'
+                    push_message(conf.get('ADMIN_USER').split(','), message=message)
+                    continue
+                else:
+                    if inferenceserving.resource_gpu and inferenceserving.resource_gpu!='0' and inferenceserving.priority==1:
+                        # print(hpa)
+                        target_utilizations = hpa.spec.metrics
+                        current_utilization = hpa.status.current_metrics
+                        current_replicas = hpa.status.current_replicas
+                        desired_replicas = hpa.status.desired_replicas
+                        if desired_replicas>current_replicas:  # 期望扩容
+                            pass
+                            # 如果没有扩张，或者持续时间太久，就缩小低优先级服务
+                            if not hpa.status.last_scale_time or datetime.datetime.now().timestamp() - hpa.status.last_scale_time.astimezone(datetime.timezone(datetime.timedelta(hours=8))).timestamp() > 400:
+                                push_message(conf.get('ADMIN_USER').split(','),'寻找扩服务%s一卡'%(inferenceserving.name,))
+                                target_node_selector = get_deployment_node_selector(name=inferenceserving.name,namespace=namespace)
+
+                                # 获取同项目组，低优先级的推理
+                                low_inferenceservings =dbsession.query(InferenceService).filter_by(priority=0).filter_by(project_id=service.project_id).all()
+                                low_inferenceservings.sort(key=lambda item:item.max_replicas-item.min_replicas)  # 从大到小排序
+                                for service in low_inferenceservings:
+                                    if service.resource_gpu and service.resource_gpu!='0':  #
+                                        current_replicas = client.AppsV1Api().read_namespaced_deployment(name=service.name, namespace=namespace).spec.replicas
+                                        # 如果当前副本数大于最小副本数
+                                        if current_replicas > service.min_replicas:
+                                            # 随意缩放一个pod
+                                            if not target_node_selector.get('gpu-type',''):
+                                                api_response = client.AppsV1Api().patch_namespaced_deployment_scale(service.name, namespace,[{'op': 'replace', 'path': '/spec/replicas', 'value': current_replicas-1}])
+                                                push_message([service.created_by.username,inferenceserving.created_by.username]+conf.get('ADMIN_USER').split(','),'缩服务%s一卡，扩服务%s一卡'%(service.name,inferenceserving.name))
+                                                return
+                                            # 缩放指定pod
+                                            else:
+                                                node_selector = get_deployment_node_selector(name=service.name,namespace=namespace)
+                                                target_gpu_type = target_node_selector['gpu-type']
+                                                exist_gpu_type = node_selector.get('gpu-type','')
+                                                if exist_gpu_type and exist_gpu_type!=target_gpu_type:
+                                                    print('服务gpu卡型不匹配')
+                                                    break
+                                                # 如果低级别服务没有gpu机型限制。就查看是否有符合需求的机器型号，缩放指定pod
+                                                pods = k8s_client.get_pods(namespace=namespace,labels={"app":service.name,"pod-type":"inference"})
+                                                nodeips = [pod['host_ip'] for pod in pods]
+                                                for nodeip in nodeips:
+                                                    node = k8s_client.get_node(nodeip)
+                                                    if node['labels'].get('gpu-type','')==target_gpu_type:
+                                                        # 缩放指定pod
+                                                        can_scale_pods = [pod for pod in pods if pod['host_ip']==nodeip]
+                                                        if can_scale_pods:
+                                                            k8s_client.v1.delete_namespaced_pod(can_scale_pods[0]['name'], namespace,grace_period_seconds=0)
+                                                            client.AppsV1Api().patch_namespaced_deployment_scale(service.name, namespace, [{'op': 'replace', 'path': '/spec/replicas','value': current_replicas - 1}])
+                                                            push_message([service.created_by.username,inferenceserving.created_by.username] + conf.get('ADMIN_USER').split(','), '缩服务%s一卡，扩服务%s一卡' % (service.name, inferenceserving.name))
+
+                                                            return
+
+
+        except Exception as e:
+            print(e)
+
+# if __name__=="__main__":
+#     adjust_service_resource(task=None)
+
+
 

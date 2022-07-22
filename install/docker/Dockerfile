@@ -19,6 +19,7 @@ COPY install/docker/docker-add-file/rest.py /usr/local/lib/python3.6/dist-packag
 COPY install/docker/docker-add-file/__init__.py /usr/local/lib/python3.6/dist-packages/marshmallow_enum/__init__.py
 
 COPY myapp /home/myapp/myapp
+COPY myapp/static/appbuilder/frontend /data/web/frontend
 ENV PATH=/home/myapp/myapp/bin:$PATH
 ENV PYTHONPATH=/home/myapp:/kubeflow/src/pipelines/sdk/python/:/kubeflow/src/fairing/:/kubeflow/src/kfserving/python/kfserving/:/kubeflow/src/tf-operator/sdk/python/:/kubeflow/src/xgboost-operator/sdk/python/:/kubeflow/src/katib/sdk/python/v1alpha3/:$PYTHONPATH
 

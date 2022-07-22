@@ -112,7 +112,8 @@ class Project_User(Model,AuditMixinNullable,MyappModelBase):
         backref=backref("user", cascade="all, delete-orphan"),
         foreign_keys=[user_id],
     )
-    role = Column(Enum('dev', 'ops','creator'),nullable=False,default='read')
+    role = Column(Enum('dev', 'ops','creator'),nullable=False,default='dev')
+    # role = Column(String(50), nullable=False, default='dev')
     export_parent = "project"
 
     def __repr__(self):

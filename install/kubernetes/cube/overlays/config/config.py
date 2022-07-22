@@ -710,8 +710,6 @@ HELP_URL={
 
 # 不使用模板中定义的镜像而直接使用用户镜像的模板名称
 CUSTOMIZE_JOB='自定义镜像'
-# 推送必带接收人
-PUSH_BCC_ADDRESS = 'admin'
 # admin管理员用户
 ADMIN_USER='admin'
 # pipeline任务的运行空间，目前必填pipeline
