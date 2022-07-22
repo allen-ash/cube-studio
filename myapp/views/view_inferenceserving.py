@@ -1169,83 +1169,83 @@ class InferenceService_ModelView_Api(InferenceService_ModelView_base,MyappModelR
             ]
         }
 
-        # service_model_path={
-        #     "tfserving":"/mnt/.../saved_model",
-        #     "torch-server": "/mnt/.../$model_name.mar",
-        #     "onnxruntime":"/mnt/.../$model_name.onnx",
-        #     "triton-server":"onnx:/mnt/.../model.onnx(model.plan,model.bin,model.savedmodel/,model.pt,model.dali)"
-        # }
-        # response['column_related']["service_type_model_path"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['model_path'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": service_model_path.get(service_type,'')
-        #         } for service_type in service_model_path
-        #     ]
-        # }
+        service_model_path={
+            "tfserving":"/mnt/.../saved_model",
+            "torch-server": "/mnt/.../$model_name.mar",
+            "onnxruntime":"/mnt/.../$model_name.onnx",
+            "triton-server":"onnx:/mnt/.../model.onnx(model.plan,model.bin,model.savedmodel/,model.pt,model.dali)"
+        }
+        response['column_related']["service_type_model_path"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['model_path'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": service_model_path.get(service_type,'')
+                } for service_type in service_model_path
+            ]
+        }
 
         # service_type 和 command 之间的关系
-        # response['column_related']["service_type_command"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['command'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": [conf.get('INFERNENCE_COMMAND',{}).get(service_type,'')]
-        #         } for service_type in conf.get('INFERNENCE_COMMAND',{})
-        #     ]
-        # }
+        response['column_related']["service_type_command"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['command'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": [conf.get('INFERNENCE_COMMAND',{}).get(service_type,'')]
+                } for service_type in conf.get('INFERNENCE_COMMAND',{})
+            ]
+        }
 
-        # # service_type 和 env 之间的关系
-        # response['column_related']["service_type_env"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['env'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": conf.get('INFERNENCE_ENV',{}).get(service_type,[])
-        #         } for service_type in conf.get('INFERNENCE_ENV',{})
-        #     ]
-        # }
-        #
-        #
-        # # service_type 和 ports 之间的关系
-        # response['column_related']["service_type_ports"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['ports'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": conf.get('INFERNENCE_PORTS',{}).get(service_type,'80')
-        #         } for service_type in conf.get('INFERNENCE_PORTS',{})
-        #     ]
-        # }
-        #
-        # # service_type 和 metrics 之间的关系
-        # response['column_related']["service_type_metrics"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['metrics'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": conf.get('INFERNENCE_METRICS',{}).get(service_type,'')
-        #         } for service_type in conf.get('INFERNENCE_METRICS',{})
-        #     ]
-        # }
-        #
-        # # service_type 和 health 之间的关系
-        # response['column_related']["service_type_health"]={
-        #     "src_columns": ["service_type"],
-        #     "des_columns": ['metrics'],
-        #     "related":[
-        #         {
-        #             "src_value": [service_type],
-        #             "des_value": conf.get('INFERNENCE_HEALTH',{}).get(service_type,'')
-        #         } for service_type in conf.get('INFERNENCE_HEALTH',{})
-        #     ]
-        # }
+        # service_type 和 env 之间的关系
+        response['column_related']["service_type_env"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['env'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": '\n'.join(conf.get('INFERNENCE_ENV',{}).get(service_type,[]))
+                } for service_type in conf.get('INFERNENCE_ENV',{})
+            ]
+        }
+
+
+        # service_type 和 ports 之间的关系
+        response['column_related']["service_type_ports"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['ports'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": conf.get('INFERNENCE_PORTS',{}).get(service_type,'80')
+                } for service_type in conf.get('INFERNENCE_PORTS',{})
+            ]
+        }
+
+        # service_type 和 metrics 之间的关系
+        response['column_related']["service_type_metrics"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['metrics'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": conf.get('INFERNENCE_METRICS',{}).get(service_type,'')
+                } for service_type in conf.get('INFERNENCE_METRICS',{})
+            ]
+        }
+
+        # service_type 和 health 之间的关系
+        response['column_related']["service_type_health"]={
+            "src_columns": ["service_type"],
+            "des_columns": ['metrics'],
+            "related":[
+                {
+                    "src_value": [service_type],
+                    "des_value": conf.get('INFERNENCE_HEALTH',{}).get(service_type,'')
+                } for service_type in conf.get('INFERNENCE_HEALTH',{})
+            ]
+        }
 
 
 

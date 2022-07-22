@@ -31,8 +31,8 @@ kubectl create -f kube-batch/deploy.yaml
 
 # 部署prometheus
 cd prometheus
-mkdir -p /data/k8s/monitoring/grafana/
-chmod -R 777 /data/k8s/monitoring/grafana/
+mkdir -p /data/k8s/monitoring/grafana/ /data/k8s/monitoring/prometheus/
+chmod -R 777 /data/k8s/monitoring/grafana/ /data/k8s/monitoring/prometheus/
 kubectl delete -f ./operator/operator-crd.yml
 kubectl apply -f ./operator/operator-crd.yml
 kubectl apply -f ./operator/operator-rbac.yml
