@@ -89,7 +89,7 @@ class Service_Filter(MyappFilter):
 class Service_ModelView_base():
     datamodel = SQLAInterface(Service)
 
-    show_columns = ['project','name', 'label','images','volume_mount','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host_url','link']
+    show_columns = ['project','name', 'label','images','volume_mount','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host_url']
     add_columns = ['project','name', 'label','images','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','host']
     list_columns = ['project','name_url','host_url','ip','deploy','creator','modified']
     cols_width={
