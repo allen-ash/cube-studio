@@ -128,7 +128,7 @@ class Task_ModelView_Base():
         ),
         "volume_mount":StringField(
             label = _(datamodel.obj.lab('volume_mount')),
-            description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,注意pvc会自动挂载对应目录下的个人rtx子目录',
+            description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,4G(memory):/dev/shm,注意pvc会自动挂载对应目录下的个人rtx子目录',
             widget=BS3TextFieldWidget(),
             default='kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives'
         ),

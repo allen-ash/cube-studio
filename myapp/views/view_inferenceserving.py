@@ -313,6 +313,12 @@ class InferenceService_ModelView_base():
             description='流量复制，将该服务的所有请求，按比例复制到目标服务上，格式 service1:20%,service2:30%，表示复制20%流量到service1，30%到service2',
             widget=BS3TextFieldWidget()
         )
+        self.add_form_extra_fields['volume_mount'] = StringField(
+            _(self.datamodel.obj.lab('volume_mount')),
+            default=service.project.volume_mount if service else '',
+            description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,4G(memory):/dev/shm,注意pvc会自动挂载对应目录下的个人rtx子目录',
+            widget=BS3TextFieldWidget()
+        )
 
 
         model_columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path']
@@ -1152,7 +1158,7 @@ class InferenceService_ModelView_Api(InferenceService_ModelView_base,MyappModelR
 
     # # 在info信息中添加特定参数，控制添加时各字段的可取值
     # @pysnooper.snoop()
-    def add_more_info(self,response,**kwargs):
+    def add_more_info1(self,response,**kwargs):
 
         # 添加字段间可取值关系，
         response['column_related']={}

@@ -115,7 +115,7 @@ class Service_ModelView_base():
         "name":StringField(_(datamodel.obj.lab('name')), description='英文名(字母、数字、- 组成)，最长50个字符',widget=BS3TextFieldWidget(), validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
         "label":StringField(_(datamodel.obj.lab('label')), description='中文名', widget=BS3TextFieldWidget(),validators=[DataRequired()]),
         "images": StringField(_(datamodel.obj.lab('images')), description='镜像全称', widget=BS3TextFieldWidget(), validators=[DataRequired()]),
-        "volume_mount":StringField(_(datamodel.obj.lab('volume_mount')),description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,注意pvc会自动挂载对应目录下的个人rtx子目录',widget=BS3TextFieldWidget(),default=''),
+        "volume_mount":StringField(_(datamodel.obj.lab('volume_mount')),description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,4G(memory):/dev/shm,注意pvc会自动挂载对应目录下的个人rtx子目录',widget=BS3TextFieldWidget(),default=''),
         "working_dir": StringField(_(datamodel.obj.lab('working_dir')),description='工作目录，容器启动的初始所在目录，不填默认使用Dockerfile内定义的工作目录',widget=BS3TextFieldWidget()),
         "command":StringField(_(datamodel.obj.lab('command')), description='启动命令，支持多行命令',widget=MyBS3TextAreaFieldWidget(rows=3)),
         "node_selector":StringField(_(datamodel.obj.lab('node_selector')), description='运行当前服务所在的机器',widget=BS3TextFieldWidget(),default='cpu=true,serving=true'),

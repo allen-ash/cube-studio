@@ -879,17 +879,17 @@ GRAFANA_NODE_PATH="/grafana/d/node/node?var-node="
 
 
 MODEL_URLS = {
-    "notebook": "/frontend/train/dev/notebook",
-    "docker": "/frontend/train/dev/docker",
-    "repository": "/frontend/train/train_template/docker_repository",
-    "template_images": "/frontend/train/train_template/template_images",
+    "notebook": "/frontend/dev/dev_online/notebook",
+    "docker": "/frontend/dev/images/docker",
+    "repository": "/frontend/dev/images/docker_repository",
+    "template_images": "/frontend/dev/images/template_images",
     "job_template": "/frontend/train/train_template/job_template",
     "pipeline": "/frontend/train/train_task/pipeline",
     "runhistory": "/frontend/train/train_task/runhistory",
     "workflow": "/frontend/train/train_task/workflow",
     "nni": "/frontend/train/train_hyperparameter/nni",
-    "service": "/frontend/train/service/service",
-    "inferenceservice": "/frontend/train/service/inferenceservice",
+    "service": "/frontend/service/k8s_service",
+    "inferenceservice": "/frontend/service/inferenceservice/inferenceservice_manager",
 }
 
 

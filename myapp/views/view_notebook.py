@@ -165,7 +165,7 @@ class Notebook_ModelView_Base():
         self.add_form_extra_fields['volume_mount'] = StringField(
             _(self.datamodel.obj.lab('volume_mount')),
             default=notebook.project.volume_mount if notebook else '',
-            description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$pvc_name2(pvc):/$container_path2',
+            description='外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,4G(memory):/dev/shm,注意pvc会自动挂载对应目录下的个人rtx子目录',
             widget=BS3TextFieldWidget()
         )
         self.add_form_extra_fields['working_dir'] = StringField(

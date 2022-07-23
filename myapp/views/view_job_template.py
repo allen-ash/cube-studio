@@ -122,7 +122,7 @@ class Job_Template_ModelView_Base():
         ),
         "volume_mount": StringField(
             _(datamodel.obj.lab('volume_mount')),
-            description='使用该模板的task，会在保存时，自动添加该挂载',
+            description='使用该模板的task，会在保存时，自动添加该挂载。外部挂载，格式:$pvc_name1(pvc):/$container_path1,$hostpath1(hostpath):/$container_path2,4G(memory):/dev/shm,注意pvc会自动挂载对应目录下的个人rtx子目录',
             widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
         ),
         "workdir": StringField(

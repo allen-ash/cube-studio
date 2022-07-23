@@ -38,7 +38,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     version = Column(String(100))
-    describe = Column(Text)
+    describe = Column(String(1000))
     path = Column(String(200))
     download_url = Column(String(200))
     project_id = Column(Integer, ForeignKey('project.id'))  # 定义外键
@@ -54,14 +54,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     framework = Column(String(100))
     metrics = Column(Text,default='{}')
     md5 = Column(String(200),default='')
-    status = Column(Enum('offline','test','online','delete'),nullable=False,default='offline')
     api_type = Column(String(100))
-    label_columns_add = {
-        "path": "模型文件",
-        "framework":"算法框架",
-    }
-    label_columns=MyappModelBase.label_columns.copy()
-    label_columns.update(label_columns_add)
 
     def __repr__(self):
         return self.name
@@ -69,7 +62,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     @property
     def pipeline_url(self):
         if self.pipeline:
-            return Markup(f'<a target=_blank href="/pipeline_modelview/list/?_flt_2_name={self.pipeline.name}">{self.pipeline.describe}</a>')
+            return Markup(f'<a target=_blank href="/frontend/showOutLink?url=%2Fstatic%2Fappbuilder%2Fvison%2Findex.html%3Fpipeline_id%3D{self.pipeline_id}">{self.pipeline.describe}</a>')
         else:
             return Markup(f'未知')
 
@@ -85,21 +78,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     @property
     def deploy(self):
         ops=f'''
-        <a href="/training_model_modelview/deploy/check_test/{self.id}">检测测试服务</a> | 
-        <a href="/training_model_modelview/deploy/test/{self.id}">部署测试环境</a> | 
-        <a href="/training_model_modelview/deploy/prod/{self.id}">部署生产</a> 
+        <a href="/training_model_modelview/deploy/{self.id}">发布</a> 
         '''
         return Markup(ops)
-
-    @property
-    def check_test_service(self):
-        return Markup(f'<a href="/training_model_modelview/deploy/check_test/{self.id}">检测测试服务</a>')
-
-    @property
-    def test_deploy(self):
-        return Markup(f'<a href="/training_model_modelview/deploy/test/{self.id}">部署测试环境</a>')
-
-    @property
-    def prod_deploy(self):
-        return Markup(f'<a href="/training_model_modelview/deploy/prod/{self.id}">部署生产</a>')
 
