@@ -455,7 +455,7 @@ REDIS_PORT = os.getenv('REDIS_PORT', '6379')
 
 # 数据库配置地址
 SQLALCHEMY_DATABASE_URI = os.getenv('MYSQL_SERVICE','mysql+pymysql://root:admin@127.0.0.1:3306/myapp?charset=utf8')
-
+SQLALCHEMY_BINDS = {}
 from celery.schedules import crontab
 from werkzeug.contrib.cache import RedisCache
 
@@ -889,6 +889,10 @@ MODEL_URLS = {
     "nni": "/frontend/train/train_hyperparameter/nni",
     "service": "/frontend/service/k8s_service",
     "inferenceservice": "/frontend/service/inferenceservice/inferenceservice_manager",
+    "train_model": "/frontend/service/inferenceservice/model_manager",
+    "metadata_metric": "/frontend/dataleap/metadata/metadata_metric",
+    "dimension": "/frontend/dataleap/metadata/metadata_dimension",
+    "metadata_table": "/frontend/dataleap/metadata/metadata_table",
 }
 
 

@@ -135,7 +135,7 @@ from myapp.project import push_message, push_admin
 
 
 @pysnooper.snoop()
-def ddl_tdw_external_table(table_id):
+def ddl_hive_external_table(table_id):
     username = g.user.username
 
     try:
@@ -143,16 +143,16 @@ def ddl_tdw_external_table(table_id):
         if not item:
             return
         cols = json.loads(item.columns)
-        # 创建tdw外表
-        tdw_type_map = {'INT': 'INT', 'TEXT': 'STRING', 'STRING': 'STRING', 'DATE': 'STRING'}
+        # 创建hive外表
+        hive_type_map = {'INT': 'INT', 'TEXT': 'STRING', 'STRING': 'STRING', 'DATE': 'STRING'}
         cols_lst = []
         for col_name in cols:
-            if col_name in ['id', 'updated', 'created']:
+            if col_name in ['id',]:
                 continue
             column_type = cols[col_name].get('column_type', 'text').upper()
-            if column_type not in tdw_type_map:
+            if column_type not in hive_type_map:
                 raise RuntimeError("更新了不支持新字段类型")
-            column_type = tdw_type_map[column_type]
+            column_type = hive_type_map[column_type]
             col_str = col_name + ' ' + column_type
             cols_lst.append(col_str)
 
@@ -258,14 +258,17 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
     }
     edit_form_extra_fields = add_form_extra_fields
 
+    @pysnooper.snoop()
     def pre_add(self, item):
-        if item.columns:
-            # 如果没有主键列就自动加上主键列
-            cols = json.loads(item.columns)
-            for col_name in cols:
-                if cols[col_name].get('primary_key',False):
-                    return
-
+        if not item.columns:
+            item.columns='{}'
+        # 如果没有主键列就自动加上主键列
+        cols = json.loads(item.columns)
+        primary_col=''
+        for col_name in cols:
+            if cols[col_name].get('primary_key',False):
+                primary_col=col_name
+        if not primary_col:
             cols['id']= {
                 "column_type": "int",
                 "describe": "主键",
@@ -362,7 +365,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
 
     @expose("/external/<dim_id>", methods=["GET"])
     def external(self,dim_id):
-        ddl_sql = ddl_tdw_external_table(dim_id)
+        ddl_sql = ddl_hive_external_table(dim_id)
         print(ddl_sql)
         return Markup(ddl_sql.replace('\n','<br>'))
 
@@ -382,14 +385,14 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
 
 
 
-    @action("create", __("创建pg表"), __("创建pg表(存在相同表名则不创建)?"), "fa-trash", single=True)
-    # @pysnooper.snoop(watch_explode=('item','sql'))
+    @action("create", __("创建远程表"), __("创建远程表?"), "fa-trash", single=True)
+    # @pysnooper.snoop(watch_explode=('table','col'))
     def create_external_table(self, item):
         sqllchemy_uri = item.sqllchemy_uri
         if sqllchemy_uri:
+
             # 创建数据库的sql(如果数据库存在就不创建，防止异常)
             if 'postgresql' in item.sqllchemy_uri:
-
                 # 创建pg表
                 import sqlalchemy.engine.url as url
                 uri = url.make_url(sqllchemy_uri)
@@ -399,7 +402,6 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                 dbsession = scoped_session(sessionmaker(bind=engine))
                 cols = json.loads(item.columns)
                 table_schema = 'public'
-
 
                 import pandas as pd
                 read_col_sql = r"select column_name from information_schema.columns where table_schema='%s' and table_name='%s' "%(table_schema,item.table_name)
@@ -444,6 +446,67 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                                 except Exception as e:
                                     dbsession.rollback()
                                     print(e)
+
+                dbsession.close()
+                # 如果远程有表，就增加字段
+
+
+            # 创建数据库的sql(如果数据库存在就不创建，防止异常)
+            if 'mysql' in item.sqllchemy_uri:
+                # 创建mysql表
+                import sqlalchemy.engine.url as url
+                uri = url.make_url(sqllchemy_uri)
+                from sqlalchemy import create_engine
+                from sqlalchemy.orm import scoped_session, sessionmaker
+                engine = create_engine(uri)
+                dbsession = scoped_session(sessionmaker(bind=engine))
+                cols = json.loads(item.columns)
+
+                import sqlalchemy
+                try:
+                    table = sqlalchemy.Table(item.table_name, sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
+
+                    exist_columns=[str(col).replace(item.table_name,'').replace('.','') for col in table.c]
+                    print(exist_columns)
+                    if exist_columns:
+                        col = json.loads(item.columns)
+                        for column_name in col:
+                            col_type = 'INT' if col[column_name].get('column_type','text').upper() == 'INT' else 'varchar(2000)'
+                            if column_name not in exist_columns:
+                                try:
+                                    sql = 'ALTER TABLE %s ADD %s %s;'%(item.table_name,column_name,col_type)
+                                    print(sql)
+                                    dbsession.execute(sql)
+                                    dbsession.commit()
+                                except Exception as e:
+                                    dbsession.rollback()
+                                    print(e)
+
+
+                except sqlalchemy.exc.NoSuchTableError as e:
+                    print('表不存在')
+                    # 如果表不存在
+
+                    # 如果远程没有表，就建表
+                    sql = '''
+                    CREATE TABLE if not exists  {table_name}  (
+                        id BIGINT PRIMARY KEY auto_increment,
+                        {columns_sql}
+                    );
+                                    '''.format(
+                        table_name=item.table_name,
+                        columns_sql='\n'.join(
+                            ["    %s %s %s %s," % (col_name, 'BIGINT' if cols[col_name].get('column_type','text').upper() == 'INT' else 'varchar(2000)',
+                                                   '' if int(cols[col_name].get('nullable', True)) else 'NOT NULL',
+                                                   '' if not int(cols[col_name].get('unique', False)) else 'UNIQUE') for
+                             col_name in cols if col_name not in ['id',]]
+                        ).strip(',')
+                    )
+                    # 执行创建数据库的sql
+                    print(sql)
+                    if sql:
+                        dbsession.execute(sql)
+                        dbsession.commit()
 
                 dbsession.close()
                 # 如果远程有表，就增加字段
