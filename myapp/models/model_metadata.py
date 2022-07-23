@@ -77,10 +77,6 @@ class Metadata_table(Model,ImportMixin,MyappModelBase):
     warehouse_level = Column(String(200), nullable=True,default='未知')   # 数仓级别
     ttl = Column(String(200), nullable=True)   # 保留时长
 
-    insert_sql = Column(Text(65536), nullable=True, default='')   # 数据导入sql
-    crontab = Column(String(200), nullable=True, default='')   # 定时周期
-    task_id = Column(String(200), nullable=True, default='')   # 关联us任务
-
     expand = Column(Text(65536), nullable=True,default='{}')
 
     def __repr__(self):

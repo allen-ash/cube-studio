@@ -84,116 +84,11 @@ class Dimension_table_Filter(MyappFilter):
 
         return query.filter(self.model.status==1).filter(
             or_(
-                self.model.dev_owner.contains(g.user.username),
-                self.model.write_owner.contains(g.user.username),
-                self.model.app_owner.contains(g.user.username),
-                self.model.app_owner.contains('*'),
+                self.model.owner.contains(g.user.username),
+                self.model.owner.contains('*'),
             )
         )
 
-
-Metadata_column_fields = {
-    "name":StringField(
-        label=_("列名"),
-        description='列名(字母、数字、_ 组成)，最长50个字符',
-        widget=BS3TextFieldWidget(),
-        validators=[Regexp("^[a-z][a-z0-9_]*[a-z0-9]$"), Length(1, 54),DataRequired()]
-    ),
-
-    "describe": StringField(
-        label=_('列描述'),
-        description='列名描述',
-        widget=BS3TextFieldWidget(),
-        validators=[DataRequired()]
-    ),
-    "column_type": SelectField(
-        label=_('字段类型'),
-        description='列类型',
-        widget=Select2Widget(),
-        choices=[['int', 'int'], ['text', 'text']],
-        validators=[DataRequired()]
-    ),
-    "input_type": SelectField(
-        label=_('ui类型'),
-        description='ui类型',
-        widget=Select2Widget(),
-        choices=[['text', 'text'],['date', 'date']],
-        validators=[DataRequired()]
-    ),
-    "unique": BooleanField(
-        label=_('是否唯一'),
-        description='是否唯一'
-    ),
-    "nullable": BooleanField(
-        label=_('是否可为空'),
-        description='是否可为空'
-    ),
-    "primary_key": BooleanField(
-        label=_('是否为主键'),
-        description='是否为主键'
-    )
-}
-
-
-
-
-
-from myapp.project import push_message,push_admin
-@pysnooper.snoop()
-def ddl_tdw_external_table(table_id):
-    from myapp.models.model_dimension import Dimension_table
-    username= g.user.username
-
-    try:
-        item = db.session.query(Dimension_table).filter_by(id=int(table_id)).first()
-        if not item:
-            return
-        cols = json.loads(item.columns)
-        # 创建tdw外表
-        tdw_type_map = {'INT': 'INT', 'TEXT': 'STRING','STRING': 'STRING','DATE': 'STRING'}
-        cols_lst = []
-        for col_name in cols:
-            if col_name in ['rowid', 'updated', 'created']:
-                continue
-            column_type = cols[col_name].get('column_type', 'text').upper()
-            if column_type not in tdw_type_map:
-                raise RuntimeError("更新了不支持新字段类型")
-            column_type = tdw_type_map[column_type]
-            col_str = col_name + ' ' + column_type
-            cols_lst.append(col_str)
-
-        columns_sql = ',\n'.join(cols_lst).strip(',')
-        tdw_db_name='tdwdata'
-        import sqlalchemy.engine.url as url
-        uri = url.make_url(item.sqllchemy_uri)
-        tdw_sql = ''' 
-# tdw建外表
-CREATE EXTERNAL TABLE IF NOT EXISTS {table_name}  (
-row_id BIGINT,
-update_time STRING,
-created STRING,
-{columns_sql}
-) 
-with (ip='{ip}',port='{port}',db_name='{pg_db_name}',user_name='{user_name}',pwd='{password}',table_name='{pg_table_name}',charset='utf8',db_type='pg');
-
-# clickhouse建外表
-@martinpchen(陈鹏)
-                        '''.format(
-            table_name=item.table_name,
-            columns_sql=columns_sql,
-            ip=uri.host,
-            port=str(uri.port),
-            user_name=uri.username,
-            password=uri.password,
-            pg_db_name=uri.database,
-            pg_table_name=item.table_name
-        )
-        return tdw_sql
-        # 执行创建数据库的sql
-        logging.info(tdw_sql)
-    except Exception as e:
-        print(e)
-        return str(e)
 
 Metadata_column_fields = {
     "name":StringField(
@@ -236,6 +131,56 @@ Metadata_column_fields = {
     )
 }
 
+from myapp.project import push_message, push_admin
+
+
+@pysnooper.snoop()
+def ddl_tdw_external_table(table_id):
+    username = g.user.username
+
+    try:
+        item = db.session.query(Dimension_table).filter_by(id=int(table_id)).first()
+        if not item:
+            return
+        cols = json.loads(item.columns)
+        # 创建tdw外表
+        tdw_type_map = {'INT': 'INT', 'TEXT': 'STRING', 'STRING': 'STRING', 'DATE': 'STRING'}
+        cols_lst = []
+        for col_name in cols:
+            if col_name in ['id', 'updated', 'created']:
+                continue
+            column_type = cols[col_name].get('column_type', 'text').upper()
+            if column_type not in tdw_type_map:
+                raise RuntimeError("更新了不支持新字段类型")
+            column_type = tdw_type_map[column_type]
+            col_str = col_name + ' ' + column_type
+            cols_lst.append(col_str)
+
+        columns_sql = ',\n'.join(cols_lst).strip(',')
+        import sqlalchemy.engine.url as url
+        uri = url.make_url(item.sqllchemy_uri)
+        hive_sql = ''' 
+# hive建外表
+CREATE EXTERNAL TABLE IF NOT EXISTS {table_name}  (
+id BIGINT,
+{columns_sql}
+) 
+with (ip='{ip}',port='{port}',db_name='{pg_db_name}',user_name='{user_name}',pwd='{password}',table_name='{pg_table_name}',charset='utf8',db_type='pg');
+
+                        '''.format(
+            table_name=item.table_name,
+            columns_sql=columns_sql,
+            ip=uri.host,
+            port=str(uri.port),
+            user_name=uri.username,
+            password=uri.password,
+            pg_db_name=uri.database,
+            pg_table_name=item.table_name
+        )
+        return hive_sql
+    except Exception as e:
+        print(e)
+        return str(e)
 
 
 class Dimension_table_ModelView_Api(MyappModelRestApi):
@@ -243,35 +188,34 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
     label_title = '维表'
     route_base = '/dimension_table_modelview/api'
     base_permissions = ['can_add','can_list','can_delete','can_show','can_edit']
-    add_columns = ['sqllchemy_uri','app','product_name','product_desc','table_name','label','describe','dev_owner','app_owner','write_owner','columns']
+    add_columns = ['sqllchemy_uri','app','table_name','label','describe','owner','columns']
     edit_columns = add_columns
-    show_columns = ['id','product_id','product_name','product_desc','label','describe','table_name','dev_owner','app_owner','write_owner','columns','status']
-    search_columns=['id','table_name','label','product_name','sqllchemy_uri']
+    show_columns = ['id','app','sqllchemy_uri','label','describe','table_name','owner','columns','status']
+    search_columns=['id','app','table_name','label','describe','sqllchemy_uri']
     order_columns = ['id']
     base_order = ('id', 'desc')
-    list_columns = ['table_html','label','dev_owner','app_owner','write_owner','describe','product_name','operate_html']
+    list_columns = ['table_html','label','owner','describe','operate_html']
     cols_width = {
         "table_html":{"type": "ellip2", "width": 300},
         "label":{"type": "ellip2", "width": 300},
-        "dev_owner": {"type": "ellip2", "width": 300},
-        "app_owner": {"type": "ellip2", "width": 300},
-        "write_owner": {"type": "ellip2", "width": 300},
+        "owner": {"type": "ellip2", "width": 300},
         "describe": {"type": "ellip2", "width": 300},
         "operate_html":{"type": "ellip2", "width": 350}
     }
     spec_label_columns = {
         "sqllchemy_uri":"链接串地址",
-        "dev_owner":"开发者负责人",
-        "app_owner":"产品负责人",
-        "write_owner": "可写用户",
+        "owner":"负责人",
         "columns": "列信息",
+        "table_html":"表名",
+        "table_name":"表名"
+
     }
     base_filters = [["id", Dimension_table_Filter, lambda: []]]  # 设置权限过滤器
 
     add_fieldsets = [
         (
             lazy_gettext('表元数据'),
-            {"fields": ['sqllchemy_uri','app','product_name','product_desc','table_name','label','describe','dev_owner','app_owner','write_owner'], "expanded": True},
+            {"fields": ['sqllchemy_uri','app','table_name','label','describe','owner'], "expanded": True},
         ),
         (
             lazy_gettext('列信息'),
@@ -281,42 +225,13 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
     ]
     edit_fieldsets = add_fieldsets
 
-    default_columns={
-        "id": {
-            "describe": "主键",
-            "column_type": "int",
-            "input_type": "text",
-            "unique": 0,
-            "nullable": 1,
-            "readonly": 0,
-            "primary_key":1
-        },
-        "name":{
-            "describe":"用户名称",
-            "column_type":"text",
-            "input_type":"text",
-            "unique":0,
-            "nullable":1,
-            "readonly":0,
-            "primary_key": 0
-        },
-        "age": {
-            "describe": "用户年龄",
-            "column_type": "text",
-            "input_type": "text",
-            "unique": 0,
-            "nullable": 1,
-            "readonly": 0,
-            "primary_key": 0
-        }
-    }
     add_form_extra_fields = {
         "sqllchemy_uri":StringField(
             _(datamodel.obj.lab('sqllchemy_uri')),
             default="",
-            description='<font color="#FF0000">罗盘维表可留空，</font> 链接串地址： <br> mysql+pymysql://root:admin@host.docker.internal:3306/db_name?charset=utf8 <br> postgresql+psycopg2://root:admin@host.docker.internal:5432/db_name',
+            description='链接串地址： <br> mysql+pymysql://root:admin@host.docker.internal:3306/db_name?charset=utf8 <br> postgresql+psycopg2://root:admin@host.docker.internal:5432/db_name',
             widget=BS3TextFieldWidget(),
-            # validators=[DataRequired(),Regexp("^(mysql\+pymysql|postgresql\+psycopg2)")]
+            validators=[DataRequired(),Regexp("^(mysql\+pymysql|postgresql\+psycopg2)")]
         ),
         "table_name":StringField(
             label=_(datamodel.obj.lab('table_name')),
@@ -328,51 +243,41 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         "app":SelectField(
             label=_(datamodel.obj.lab('app')),
             description='产品分类',
-            widget=Select2Widget(),
-            default='qqmusic',
-            choices=[['qqmusic','QQ音乐'], ['qmkg','全民K歌'],['kugou', '酷狗'],['kuwo', '酷我'],['lrts', '懒人'], ['qmlite','小米lite'],['infra','基础架构'],['privacy', '封闭域'],['datagovernance','数据治理']],
+            widget=MySelect2Widget(can_input=True,conten2choices=True),
+            default='',
+            choices=[[x,x] for x in ['产品1',"产品2","产品3"]],
             validators=[DataRequired()]
         ),
-        # "columns":StringField(
-        #     label='字段信息',
-        #     default=json.dumps(default_columns,indent=4,ensure_ascii=False),
-        #     description='维表字段信息，必须包含自增主键列，例如id',
-        #     widget=MyBS3TextAreaFieldWidget(rows=10)
-        # )
+        "owner": StringField(
+            label=_(datamodel.obj.lab('owner')),
+            default='',
+            description='责任人,逗号分隔的多个用户',
+            widget=BS3TextFieldWidget(),
+        ),
+
     }
     edit_form_extra_fields = add_form_extra_fields
 
     def pre_add(self, item):
-        if not item.sqllchemy_uri:
-            item.sqllchemy_uri='postgresql+psycopg2://u_isd_dim:dim1#@sngrpt-bi-tdw.tencent-distribute.com:5432/tdwdata'
         if item.columns:
-            # 如果没有主键列就自动加上row主键列
+            # 如果没有主键列就自动加上主键列
             cols = json.loads(item.columns)
             for col_name in cols:
                 if cols[col_name].get('primary_key',False):
                     return
-            if 'postgresql' in item.sqllchemy_uri:
-                cols['rowid']= {
-                    "column_type": "int",
-                    "describe": "主键",
-                    "name": "rowid",
-                    "nullable": False,
-                    "primary_key": True,
-                    "unique": True
-                }
-            if 'mysql' in item.sqllchemy_uri:
-                cols['id']= {
-                    "column_type": "int",
-                    "describe": "主键",
-                    "name": "id",
-                    "nullable": False,
-                    "primary_key": True,
-                    "unique": True
-                }
+
+            cols['id']= {
+                "column_type": "int",
+                "describe": "主键",
+                "name": "id",
+                "nullable": False,
+                "primary_key": True,
+                "unique": True
+            }
             item.columns=json.dumps(cols,indent=4,ensure_ascii=False)
 
-        if not item.dev_owner or g.user.username not in item.dev_owner:
-            item.dev_owner = g.user.username if not item.dev_owner else item.dev_owner + "," + g.user.username
+        if not item.owner or g.user.username not in item.owner:
+            item.owner = g.user.username if not item.owner else item.owner + "," + g.user.username
 
     def pre_update(self, item):
         if not item.sqllchemy_uri:
@@ -409,7 +314,8 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         import sqlalchemy.engine.url as url
         uri = url.make_url(dim.sqllchemy_uri)
         sql_engine = create_engine(uri)
-        cols = [col for col in json.loads(dim.columns).keys() if col != 'rowid']
+        columns = list(json.loads(dim.columns).values())
+        cols = [col['name'] for col in columns if not col.get('primary_key',False)]
         sql = 'select %s from %s' % (','.join(cols), dim.table_name)
         results = pandas.read_sql_query(sql, sql_engine)
         return results.to_dict()
@@ -442,7 +348,8 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         import sqlalchemy.engine.url as url
         uri = url.make_url(dim.sqllchemy_uri)
         sql_engine = create_engine(uri)
-        cols = [col for col in json.loads(dim.columns).keys() if col != 'rowid']
+        columns = list(json.loads(dim.columns).values())
+        cols = [col['name'] for col in columns if not col.get('primary_key', False)]
         sql = 'select %s from %s' % (','.join(cols), dim.table_name)
         results = pandas.read_sql_query(sql, sql_engine)
         file_path = '%s.csv' % dim.table_name
@@ -453,7 +360,6 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         response = self.csv_response(csv_file, file_name=dim.table_name)
         return response
 
-
     @expose("/external/<dim_id>", methods=["GET"])
     def external(self,dim_id):
         ddl_sql = ddl_tdw_external_table(dim_id)
@@ -463,14 +369,13 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
     @expose("/clear/<dim_id>", methods=["GET"])
     def clear(self,dim_id):
         dim = db.session.query(Dimension_table).filter_by(id=int(dim_id)).first()
-        if 'postgresql' in dim.sqllchemy_uri:
-            import sqlalchemy.engine.url as url
-            uri = url.make_url(dim.sqllchemy_uri)
-            engine = create_engine(uri)
-            dbsession = scoped_session(sessionmaker(bind=engine))
-            dbsession.execute('TRUNCATE TABLE  %s;'%dim.table_name)
-            dbsession.commit()
-            dbsession.close()
+        import sqlalchemy.engine.url as url
+        uri = url.make_url(dim.sqllchemy_uri)
+        engine = create_engine(uri)
+        dbsession = scoped_session(sessionmaker(bind=engine))
+        dbsession.execute('TRUNCATE TABLE  %s;'%dim.table_name)
+        dbsession.commit()
+        dbsession.close()
         # flash('清空完成','warning')
         return Markup("清空完成")
 
@@ -493,8 +398,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                 engine = create_engine(uri)
                 dbsession = scoped_session(sessionmaker(bind=engine))
                 cols = json.loads(item.columns)
-                table_schema = 'u_isd_dim'
-                # table_schema = 'public'
+                table_schema = 'public'
 
 
                 import pandas as pd
@@ -507,19 +411,16 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                     # 如果远程没有表，就建表
                     sql = '''
                     CREATE TABLE if not exists  {table_name}  (
-                        rowid BIGINT PRIMARY KEY,
-                        updated TIMESTAMPTZ,
-                        created TIMESTAMPTZ,
+                        id BIGINT PRIMARY KEY,
                         {columns_sql}
                     );
                                     '''.format(
                         table_name=item.table_name,
                         columns_sql='\n'.join(
-                            ["    %s %s %s %s," % (col_name, 'BIGINT' if cols[col_name].get('column_type',
-                                                                                         'text').upper() == 'INT' else 'varchar(2000)',
+                            ["    %s %s %s %s," % (col_name, 'BIGINT' if cols[col_name].get('column_type','text').upper() == 'INT' else 'varchar(2000)',
                                                    '' if int(cols[col_name].get('nullable', True)) else 'NOT NULL',
                                                    '' if not int(cols[col_name].get('unique', False)) else 'UNIQUE') for
-                             col_name in cols if col_name not in ['rowid', 'updated', 'created']]
+                             col_name in cols if col_name not in ['id',]]
                         ).strip(',')
                     )
                     # 执行创建数据库的sql
@@ -631,8 +532,6 @@ class Dimension_remote_table_ModelView_Api(MyappModelRestApi):
                     }
 
                 column_sql_type = BigInteger if column_type == 'int' else String  # 因为实际使用的时候，会在数据库中存储浮点数据，通用性也更强
-                if column_name=='rowid':
-                    column_sql_type = BigInteger
 
                 val=[DataRequired()] if not columns[column_name].get('nullable',True) else []
                 if column_type =='date':
@@ -695,40 +594,12 @@ class Dimension_remote_table_ModelView_Api(MyappModelRestApi):
             url = '/dimension_remote_table_modelview/%s/api/' % dim_id
             print(url)
 
+            def get_primary_key(cols):
+                for name in cols:
+                    if cols[name].get('primary_key',False):
+                        return name
+                return ''
 
-
-            # 预处理一下
-            # @pysnooper.snoop(watch_explode=('item'))
-            def pre_add(self,item):
-                if hasattr(item,'rowid'):
-                    item.rowid=int(time.time()*1000)*100+random.randint(1,100)
-                if hasattr(item,'updated'):
-                    item.updated = datetime.datetime.now().timestamp()
-                if hasattr(item, 'created'):
-                    item.created = datetime.datetime.now().timestamp()
-
-
-
-            def pre_update(self,item):
-                if hasattr(item, 'created'):
-                    item.created = datetime.datetime.now().timestamp()
-
-            def pre_json_load(self, req_json=None):
-                if req_json and 'rowid' in req_json:
-                    req_json['rowid'] = int(req_json.get('rowid', '0'))
-                return req_json
-
-            # 返回处理值，
-            def pre_get_list(self, result):
-                data = result['data']
-                for item in data:
-                    item['rowid']=str(item.get('rowid',''))
-
-            # 返回处理值，
-            def pre_get(self, result):
-                data = result['data']
-                data['rowid'] = str(data.get('rowid', ''))
-                return result
 
             @expose("/upload/", methods=["POST"])
             # @pysnooper.snoop(watch_explode=('attr'))
@@ -837,18 +708,12 @@ class Dimension_remote_table_ModelView_Api(MyappModelRestApi):
                     search_columns=search_columns,
                     order_columns=order_columns,
                     label_title = dim.label,
-                    base_permissions = ['can_list','can_add','can_delete','can_edit','can_show'],
-                    pre_add=pre_add,
-                    pre_update=pre_update,
-                    pre_get_list=pre_get_list,
-                    pre_get=pre_get,
-                    pre_json_load=pre_json_load,
                     upload=upload,
                     muldelete=muldelete,
                     dim_id=dim_id,
                     import_data=True,
                     cols_width=cols_width,
-                    base_order=("rowid", "desc") if 'rowid' in columns else None
+                    base_order=(get_primary_key(columns), "desc") if get_primary_key(columns) else None
                 )
             )
             view_instance = view_class()

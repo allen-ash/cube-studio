@@ -765,6 +765,7 @@ class MyappModelRestApi(ModelRestApi):
 
 
     def merge_more_info(self,response,**kwargs):
+        # 将 配置根据历史填写值作为选项的字段配置出来。
         if self.add_more_info:
             try:
                 self.add_more_info(response,**kwargs)
@@ -1470,7 +1471,7 @@ class MyappModelRestApi(ModelRestApi):
 
         return ret
 
-    # @pysnooper.snoop(watch_explode=('aa'))
+    # @pysnooper.snoop(watch_explode=('field_contents'))
     def _get_field_info(self, field, filter_rel_field, page=None, page_size=None):
         """
             Return a dict with field details
@@ -1559,6 +1560,16 @@ class MyappModelRestApi(ModelRestApi):
                     # if hasattr(column_field_kwargs['widget'],'can_input'):
                     #     print(field.name,column_field_kwargs['widget'].can_input)
                     ret['ui-type'] = 'input-select' if hasattr(column_field_kwargs['widget'],'can_input') and column_field_kwargs['widget'].can_input else False
+                    # 对于那种配置使用过往记录作为可选值的参数进行处理
+                    if hasattr(column_field_kwargs['widget'], 'conten2choices') and column_field_kwargs['widget'].conten2choices:
+                        try:
+                            field_contents = db.session.query(getattr(self.datamodel.obj,field.name)).group_by(getattr(self.datamodel.obj,field.name)).all()
+                            field_contents = [item[0] for item in field_contents]
+                            if field_contents:
+                                ret['choices']=[[x,x] for x in list(set(field_contents))]
+                        except Exception as e:
+                            print(e)
+
 
         # 补充数据库model中定义的是否必填
         columns = [column for column in self.datamodel.obj.__table__._columns if column.name==field.name and hasattr(column,'nullable') and not column.nullable]

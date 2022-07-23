@@ -49,33 +49,23 @@ class Dimension_table(Model,ImportMixin,MyappModelBase):
 
     id = Column(Integer, primary_key=True)
     sqllchemy_uri = Column(String(255),nullable=True)
-    src_db = Column(String(255),nullable=True)
-    syn_db = Column(String(255),nullable=True)
     table_name = Column(String(255),nullable=True,unique=True)
     label = Column(String(255), nullable=True)
     describe = Column(String(2000), nullable=True)
     app = Column(String(255), nullable=True)
-
-    dev_owner = Column(String(2000), nullable=True,default='')
-    app_owner = Column(String(2000), nullable=True,default='')
-    write_owner = Column(String(2000), nullable=True,default='')
+    owner = Column(String(2000), nullable=True,default='')
     columns=Column(Text, nullable=True,default='{}')
-    product_id = Column(String(255),nullable=True)
-    product_name = Column(String(255), nullable=True)
-    product_desc = Column(String(2000), nullable=True)
     status = Column(Integer, default=1)
 
 
     @property
     def table_html(self):
         users=''
-        users = users+self.dev_owner if self.dev_owner else users
-        users = users+"," + self.write_owner if self.write_owner else users
-        users = users+"," + self.app_owner if self.app_owner else users
+        users = users+self.owner if self.owner else users
         users = users.split(',')
         users = [user.strip() for user in users if user.strip()]
         url_path = conf.get('MODEL_URLS',{}).get("dimension")
-        if g.user.is_admin() or g.user.username in users or '*' in self.app_owner:
+        if g.user.is_admin() or g.user.username in users or '*' in self.owner:
             return Markup(f'<a target=_blank href="{url_path}?targetId={self.id}">{self.table_name}</a>')
         else:
             return self.table_name

@@ -103,7 +103,8 @@ class Metadata_metric_ModelView_base():
         "name":"指标英文名",
         "label": "指标中文名",
         "describe":"指标描述",
-        "metric_data_type":"指标模块"
+        "metric_data_type":"指标模块",
+        "task_id":"任务id"
     }
     add_columns = ['app','metric_data_type','name','label','describe','metric_type','metric_level','metric_dim','metric_responsible','caliber','task_id','public']
     # show_columns = ['project','name','describe','config_html','dag_json_html','created_by','changed_by','created_on','changed_on','expand_html']
@@ -113,8 +114,8 @@ class Metadata_metric_ModelView_base():
         "app": SelectField(
             label=_(datamodel.obj.lab('app')),
             description='产品',
-            widget=Select2Widget(),
-            choices=[[x,x] for x in ['QQ音乐', '酷狗音乐','全民K歌','酷我音乐','懒人畅听','基础架构']]
+            widget=MySelect2Widget(can_input=True,conten2choices=True),
+            choices=[[x,x] for x in ['产品1',"产品2","产品3"]]
         ),
         "name":StringField(
             label=_(datamodel.obj.lab('name')),
@@ -143,9 +144,9 @@ class Metadata_metric_ModelView_base():
         ),
         "metric_data_type": SelectField(
             label=_(datamodel.obj.lab('metric_data_type')),
-            description='指标归属模块，<a href="%s">创建/查看 指标类型</a>'%conf.get('MODEL_URLS',{}).get('metric_data_type'),
-            widget=MySelect2Widget(can_input=True),
-            choices=[[x, x] for x in ['营收','规模','商业化']]
+            description='指标归属模块',
+            widget=MySelect2Widget(can_input=True,conten2choices=True),
+            choices=[[x,x] for x in ['模块1',"模块2","模块3"]]
         ),
         "metric_level":SelectField(
             label=_(datamodel.obj.lab('metric_level')),
@@ -272,35 +273,6 @@ class Metadata_metric_ModelView_Api(Metadata_metric_ModelView_base,MyappModelRes
     datamodel = SQLAInterface(Metadata_metric)
     route_base = '/metadata_metric_modelview/api'
     label_title='指标'
-
-
-    # 添加可选值
-    # @pysnooper.snoop()
-    def add_more_info(self,response,**kwargs):
-        from myapp.views.baseApi import API_RELATED_RIS_KEY,API_ADD_COLUMNS_RES_KEY,API_EDIT_COLUMNS_RES_KEY
-
-        choices=list(Dimension_table_ModelView_Api.get_dim_target_data(2447)['metric_type'].values())
-        print(choices)
-        if not choices:
-            return
-        columns = response[API_ADD_COLUMNS_RES_KEY]
-        for column in columns:
-            if column['name']=='metric_data_type':
-                column['values']=[
-                    {
-                        'id': x,
-                        'value': x
-                    } for x in list(set(choices))
-                ]
-
-        response[API_ADD_COLUMNS_RES_KEY]=columns
-
-        # for col in response[API_ADD_COLUMNS_RES_KEY]:
-        #     if col['name']=='columns':
-        #         response[API_EDIT_COLUMNS_RES_KEY].remove(col)
-        # for col in response[API_EDIT_COLUMNS_RES_KEY]:
-        #     if col['name'] == 'columns':
-        #         response[API_EDIT_COLUMNS_RES_KEY].remove(col)
 
 
 appbuilder.add_api(Metadata_metric_ModelView_Api)
