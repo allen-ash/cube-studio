@@ -32,7 +32,7 @@ else:
     clusters = conf.get('CLUSTERS',{})
     if clusters and cluster in clusters:
         kubeconfig = clusters[cluster].get('KUBECONFIG','')
-        k8s(kubeconfig)
+        K8s(kubeconfig)
     else:
         print('no kubeconfig in cluster %s' % cluster)
         exit(1)

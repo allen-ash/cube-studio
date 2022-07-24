@@ -42,7 +42,7 @@ import pysnooper
 
 # 定义model
 class Metadata_table(Model,ImportMixin,MyappModelBase):
-    __tablename__ = 'tdw_metadata'
+    __tablename__ = 'metadata_table'
     id = Column(Integer, primary_key=True)
     node_id = Column(String(200))
     app = Column(String(200), nullable=True)

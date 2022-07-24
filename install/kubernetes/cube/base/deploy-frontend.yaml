@@ -63,7 +63,7 @@ metadata:
   labels:
     app: kubeflow-dashboard-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kubeflow-dashboard-frontend
@@ -95,7 +95,7 @@ spec:
       serviceAccount: kubeflow-dashboard
       containers:
         - name: kubeflow-dashboard-frontend
-          image: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard:frontend-2022.07.01
+          image: ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend:2022.08.01
           imagePullPolicy: Always  # IfNotPresent
 
           ports:
@@ -103,12 +103,9 @@ spec:
               containerPort: 80
               protocol: TCP
           resources:
-            limits:
-              cpu: 10
-              memory: 10Gi
             requests:
-              cpu: 1
-              memory: 1Gi
+              cpu: 10m
+              memory: 100Mi
 
           volumeMounts:
             - name: nginx-configmap

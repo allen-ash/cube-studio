@@ -31,7 +31,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('table_name')
     )
-    op.create_table('tdw_metadata',
+    op.create_table('metadata_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('node_id', sa.String(length=200), nullable=True),
     sa.Column('app', sa.String(length=200), nullable=True),
@@ -163,6 +163,6 @@ def downgrade():
     )
     op.drop_table('model')
     op.drop_table('metadata_metric')
-    op.drop_table('tdw_metadata')
+    op.drop_table('metadata_table')
     op.drop_table('dimension')
     # ### end Alembic commands ###
