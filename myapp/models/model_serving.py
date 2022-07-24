@@ -189,10 +189,7 @@ class InferenceService(Model,AuditMixinNullable,MyappModelBase,service_common):
 
     @property
     def model_name_url(self):
-        if 'kfserving' not in self.service_type:
-            url = self.project.cluster['K8S_DASHBOARD_CLUSTER'] + '#/search?namespace=%s&q=%s' % (conf.get('SERVICE_NAMESPACE'), self.name.replace('_', '-'))
-        else:
-            url = self.project.cluster['K8S_DASHBOARD_CLUSTER'] + '#/search?namespace=%s&q=%s' % (conf.get('KFSERVING_NAMESPACE'), self.name.replace('_', '-'))
+        url = self.project.cluster['K8S_DASHBOARD_CLUSTER'] + '#/search?namespace=%s&q=%s' % (conf.get('SERVICE_NAMESPACE'), self.name.replace('_', '-'))
         return Markup(f'<a target=_blank href="{url}">{self.model_name}</a>')
 
     @property
