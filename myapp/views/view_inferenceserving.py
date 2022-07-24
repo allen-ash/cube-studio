@@ -31,6 +31,7 @@ from myapp.forms import MyBS3TextAreaFieldWidget,MySelect2Widget,MyCodeArea,MyLi
 from myapp.utils.py import py_k8s
 import os, zipfile
 import shutil
+from myapp.views.view_team import Project_Filter,Project_Join_Filter,filter_join_org_project
 from myapp.views.view_team import filter_join_org_project
 from flask import (
     current_app,
@@ -95,8 +96,13 @@ class InferenceService_ModelView_base():
 
     edit_columns = add_columns
 
+    add_form_query_rel_fields = {
+        "project": [["name", Project_Join_Filter, 'org']]
+    }
+    edit_form_query_rel_fields = add_form_query_rel_fields
 
-    list_columns = ['project','label','model_name_url','model_version','inference_host_url','model_status','creator','modified','operate_html']
+
+    list_columns = ['project','label','model_name_url','model_version','inference_host_url','ip','model_status','creator','modified','operate_html']
     cols_width={
         "project":{"type": "ellip2", "width": 150},
         "label": {"type": "ellip2", "width": 200},
@@ -104,6 +110,7 @@ class InferenceService_ModelView_base():
         "model_name_url":{"type": "ellip2", "width": 300},
         "model_version": {"type": "ellip2", "width": 200},
         "inference_host_url": {"type": "ellip2", "width": 500},
+        "ip": {"type": "ellip2", "width": 200},
         "model_status": {"type": "ellip2", "width": 100},
         "modified": {"type": "ellip2", "width": 150},
         "operate_html": {"type": "ellip2", "width": 300},
@@ -117,19 +124,12 @@ class InferenceService_ModelView_base():
     base_filters = [["id",InferenceService_Filter, lambda: []]]  # 设置权限过滤器
     custom_service = 'serving'
     # service_type_choices= ['',custom_service,'tfserving','torch-server','onnxruntime','triton-server','kfserving-tf','kfserving-torch','kfserving-onnx','kfserving-sklearn','kfserving-xgboost','kfserving-lightgbm','kfserving-paddle']
-    service_type_choices= ['',custom_service,'tfserving','torch-server','onnxruntime','triton-server']
+    service_type_choices= [custom_service,'tfserving','torch-server','onnxruntime','triton-server']
     # label_columns = {
     #     "host": _("域名：测试环境test.xx，调试环境 debug.xx"),
     # }
     service_type_choices = [x.replace('_','-') for x in service_type_choices]
     add_form_extra_fields={
-        "project": QuerySelectField(
-            _(datamodel.obj.lab('project')),
-            query_factory=filter_join_org_project,
-            allow_blank=True,
-            widget=Select2Widget(),
-            validators=[DataRequired()]
-        ),
         "resource_memory":StringField(_(datamodel.obj.lab('resource_memory')),default='5G',description='内存的资源使用限制，示例1G，10G， 最大100G，如需更多联系管路员',widget=BS3TextFieldWidget(),validators=[DataRequired()]),
         "resource_cpu":StringField(_(datamodel.obj.lab('resource_cpu')), default='5',description='cpu的资源使用限制(单位核)，示例 0.4，10，最大50核，如需更多联系管路员',widget=BS3TextFieldWidget(), validators=[DataRequired()]),
         "min_replicas": StringField(_(datamodel.obj.lab('min_replicas')), default=InferenceService.min_replicas.default.arg,description='最小副本数，用来配置高可用，流量变动自动伸缩',widget=BS3TextFieldWidget(), validators=[DataRequired()]),
@@ -216,6 +216,11 @@ class InferenceService_ModelView_base():
 
         # 下面是公共配置，特定化值
         images = conf.get('INFERNENCE_IMAGES',{}).get(service_type,[])
+        images=[]
+        INFERNENCE_IMAGES = list(conf.get('INFERNENCE_IMAGES',{}).values())
+        for item in INFERNENCE_IMAGES:
+            images+=item
+        # images = INFERNENCE_IMAGES.get('tfserving',[])+INFERNENCE_IMAGES.get('torch-server',[])+INFERNENCE_IMAGES.get('onnxruntime',[])+INFERNENCE_IMAGES.get('triton-server',[])
         command = conf.get('INFERNENCE_COMMAND',{}).get(service_type,'')
         env = conf.get('INFERNENCE_ENV',{}).get(service_type,[])
         ports = conf.get('INFERNENCE_PORTS', {}).get(service_type, '80')
@@ -712,7 +717,6 @@ instance_group [
 
     def pre_delete(self, item):
         self.delete_old_service(item.name,item.project.cluster)
-        self.delete_polaris(item)   # 删除需要删除北极星
         flash('服务已清理完成', category='warning')
 
     @expose('/clear/<service_id>', methods=['POST', "GET"])
@@ -1061,7 +1065,7 @@ instance_group [
                 username=service.created_by.username,
                 ports=service_ports,
                 selector=labels,
-                externalIPs=SERVICE_EXTERNAL_IP
+                external_ip=SERVICE_EXTERNAL_IP
             )
 
 
@@ -1177,16 +1181,16 @@ class InferenceService_ModelView_Api(InferenceService_ModelView_base,MyappModelR
         response['column_related']={}
 
         # service_type 和 镜像 之间的关系
-        response['column_related']["service_type_images"]={
-            "src_columns": ["service_type"],
-            "des_columns": ['images'],
-            "related":[
-                {
-                    "src_value": [service_type],
-                    "des_value": conf.get('INFERNENCE_IMAGES',{}).get(service_type,[])
-                } for service_type in conf.get('INFERNENCE_IMAGES',{})
-            ]
-        }
+        # response['column_related']["service_type_images"]={
+        #     "src_columns": ["service_type"],
+        #     "des_columns": ['images'],
+        #     "related":[
+        #         {
+        #             "src_value": [service_type],
+        #             "des_value": conf.get('INFERNENCE_IMAGES',{}).get(service_type,[])
+        #         } for service_type in conf.get('INFERNENCE_IMAGES',{})
+        #     ]
+        # }
 
         service_model_path={
             "tfserving":"/mnt/.../saved_model",

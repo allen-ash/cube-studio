@@ -14,7 +14,7 @@ from myapp import app, appbuilder,db,event_logger
 import logging
 import re
 import uuid
-
+from myapp.views.view_team import Project_Filter,Project_Join_Filter,filter_join_org_project
 import requests
 from myapp.exceptions import MyappException
 from flask_appbuilder.security.decorators import has_access
@@ -95,7 +95,10 @@ class Training_Model_ModelView_Base():
     list_columns = ['name','project_url','pipeline_url','version','creator','modified','deploy']
     add_columns = ['project','pipeline','name','version','describe','path','framework','run_id','run_time','metrics','md5','api_type']
     edit_columns = add_columns
-
+    add_form_query_rel_fields = {
+        "project": [["name", Project_Join_Filter, 'org']]
+    }
+    edit_form_query_rel_fields = add_form_query_rel_fields
     cols_width={
         "name":{"type": "ellip2", "width": 250},
         "project_url": {"type": "ellip2", "width": 200},
@@ -121,30 +124,10 @@ class Training_Model_ModelView_Base():
             tensorrt:模型文件地址, /mnt/xx/../xx.plan<br>
             '''
 
-    def filter_project():
-        query = db.session.query(Project)
-        user_roles = [role.name.lower() for role in list(get_user_roles())]
-        if "admin" in user_roles:
-            return query.filter(Project.type=='org').order_by(Project.id.desc())
-
-        # 查询自己拥有的项目
-        my_user_id = g.user.get_id() if g.user else 0
-        owner_ids_query = db.session.query(Project_User.project_id).filter(Project_User.user_id == my_user_id)
-
-        return query.filter(Project.id.in_(owner_ids_query)).filter(Project.type=='org').order_by(Project.id.desc())
 
     service_type_choices= [x.replace('_','-') for x in ['tfserving','torch-server','onnxruntime','triton-server']]
 
     add_form_extra_fields={
-
-        "project": QuerySelectField(
-            _('模型服务项目组'),
-            description=_('如果没有可选项目组，可联系管理员加入到项目组中'),
-            query_factory=filter_project,
-            allow_blank=False,
-            widget=Select2Widget(),
-            validators=[DataRequired()]
-        ),
         "path": FileField(
             _('模型文件地址'),
             default='/mnt/admin/xx/saved_model/',
@@ -219,9 +202,13 @@ class Training_Model_ModelView_Base():
     def deploy(self,model_id):
         train_model = db.session.query(Training_Model).filter_by(id=model_id).first()
         exist_inference = db.session.query(InferenceService).filter_by(model_name=train_model.name).filter_by(model_version=train_model.version).first()
+        from myapp.views.view_inferenceserving import InferenceService_ModelView_base
+        inference_class = InferenceService_ModelView_base()
+        inference_class.src_item_json={}
         if not exist_inference:
             exist_inference = InferenceService()
             exist_inference.project_id=train_model.project_id
+            exist_inference.project = train_model.project
             exist_inference.model_name=train_model.name
             exist_inference.label = train_model.describe
             exist_inference.model_version=train_model.version
@@ -229,6 +216,8 @@ class Training_Model_ModelView_Base():
             exist_inference.service_type=train_model.api_type
             exist_inference.images=''
             exist_inference.name='%s-%s-%s'%(exist_inference.service_type,train_model.name,train_model.version.replace('v','').replace('.',''))
+            inference_class.pre_add(exist_inference)
+
             db.session.add(exist_inference)
             db.session.commit()
             flash('新服务版本创建完成','success')
