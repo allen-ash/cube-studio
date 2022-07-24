@@ -83,9 +83,10 @@ class Repository_ModelView_Base():
     add_form_extra_fields = {
         "password": StringField(
             _(datamodel.obj.lab('password')),
-            widget=BS3PasswordFieldWidget()  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=BS3TextFieldWidget()  # 传给widget函数的是外层的field对象，以及widget函数的参数
         )
     }
+
     edit_form_extra_fields = add_form_extra_fields
 
     # @pysnooper.snoop()
@@ -128,11 +129,11 @@ class Repository_ModelView_Base():
     def post_update(self, item):
         self.apply_hubsecret(item)
 
-class Repository_ModelView(Repository_ModelView_Base,MyappModelView,DeleteMixin):
-    datamodel = SQLAInterface(Repository)
-
-# 添加视图和菜单
-appbuilder.add_view(Repository_ModelView,"仓库",icon = 'fa-shopping-basket',category = '训练',category_icon = 'fa-sitemap')
+# class Repository_ModelView(Repository_ModelView_Base,MyappModelView,DeleteMixin):
+#     datamodel = SQLAInterface(Repository)
+#
+# # 添加视图和菜单
+# appbuilder.add_view(Repository_ModelView,"仓库",icon = 'fa-shopping-basket',category = '训练',category_icon = 'fa-sitemap')
 
 # 添加api
 class Repository_ModelView_Api(Repository_ModelView_Base,MyappModelRestApi):

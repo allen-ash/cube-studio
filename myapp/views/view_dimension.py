@@ -371,16 +371,21 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
 
     @expose("/clear/<dim_id>", methods=["GET"])
     def clear(self,dim_id):
-        dim = db.session.query(Dimension_table).filter_by(id=int(dim_id)).first()
-        import sqlalchemy.engine.url as url
-        uri = url.make_url(dim.sqllchemy_uri)
-        engine = create_engine(uri)
-        dbsession = scoped_session(sessionmaker(bind=engine))
-        dbsession.execute('TRUNCATE TABLE  %s;'%dim.table_name)
-        dbsession.commit()
-        dbsession.close()
-        # flash('清空完成','warning')
-        return Markup("清空完成")
+        try:
+            dim = db.session.query(Dimension_table).filter_by(id=int(dim_id)).first()
+            import sqlalchemy.engine.url as url
+            uri = url.make_url(dim.sqllchemy_uri)
+            engine = create_engine(uri)
+            dbsession = scoped_session(sessionmaker(bind=engine))
+            dbsession.execute('TRUNCATE TABLE  %s;'%dim.table_name)
+            dbsession.commit()
+            dbsession.close()
+            flash('清空完成','success')
+        except Exception as e:
+            flash('清空失败：'+str(e), 'error')
+
+        url_path = conf.get('MODEL_URLS', {}).get("dimension")+'?targetId='+dim_id
+        return redirect(url_path)
 
 
 

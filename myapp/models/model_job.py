@@ -69,7 +69,7 @@ class Images(Model,AuditMixinNullable,MyappModelBase):
     )
 
     name = Column(String(500), nullable=False)
-    describe = Column(Text)
+    describe = Column(String(1000), nullable=False)
     repository_id = Column(Integer, ForeignKey('repository.id'))    # 定义外键
     repository = relationship(
         "Repository", foreign_keys=[repository_id]
@@ -109,7 +109,7 @@ class Job_Template(Model,AuditMixinNullable,MyappModelBase):
         Images, foreign_keys=[images_id]
     )
     hostAliases = Column(Text)   # host文件
-    describe = Column(Text)
+    describe = Column(String(500), nullable=False,unique=True)
     workdir=Column(String(400))
     entrypoint=Column(String(200))
     args=Column(Text)

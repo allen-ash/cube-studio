@@ -103,7 +103,11 @@ class Docker_ModelView_Base():
         "project": [["name", Project_Join_Filter, 'org']]
     }
     edit_form_query_rel_fields=add_form_query_rel_fields
-
+    expand={
+        "volume_mount":"kubeflow-user-workspace(pvc):/mnt",
+        "resource_memory":"8G",
+        "resource_cpu": "4"
+    }
     add_form_extra_fields={
         "describe":StringField(
             _(datamodel.obj.lab('describe')),
@@ -114,15 +118,15 @@ class Docker_ModelView_Base():
         ),
         "base_image":StringField(
             _(datamodel.obj.lab('base_image')),
-            default='',
+            default='ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.0.3-cudnn8',
             description=Markup(f'基础镜像和构建方法可参考：<a href="%s">点击打开</a>'%(conf.get('HELP_URL').get('docker',''))),
             widget=BS3TextFieldWidget()
         ),
         "expand":StringField(
             _(datamodel.obj.lab('expand')),
-            default='{}',
-            description=Markup(f'扩展字段：<a href="%s">配置参考</a>'%(conf.get('HELP_URL').get('docker',''))),
-            widget=BS3TextFieldWidget()
+            default=json.dumps(expand,ensure_ascii=False,indent=4),
+            description=Markup(f'扩展字段'),
+            widget=MyBS3TextAreaFieldWidget(rows=3)
         )
 
     }
@@ -333,12 +337,12 @@ class Docker_ModelView_Base():
 
 
 
-
-class Docker_ModelView(Docker_ModelView_Base,MyappModelView,DeleteMixin):
-    datamodel = SQLAInterface(Docker)
-
-# 添加视图和菜单
-appbuilder.add_view(Docker_ModelView,"镜像调试",href="/docker_modelview/list/",icon = 'fa-cubes',category = '在线开发',category_icon = 'fa-glass')
+#
+# class Docker_ModelView(Docker_ModelView_Base,MyappModelView,DeleteMixin):
+#     datamodel = SQLAInterface(Docker)
+#
+# # 添加视图和菜单
+# appbuilder.add_view(Docker_ModelView,"镜像调试",href="/docker_modelview/list/",icon = 'fa-cubes',category = '在线开发',category_icon = 'fa-glass')
 
 # 添加api
 class Docker_ModelView_Api(Docker_ModelView_Base,MyappModelRestApi):

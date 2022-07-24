@@ -18,7 +18,7 @@ from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from flask_appbuilder.fieldwidgets import Select2Widget
 from myapp.exceptions import MyappException
 from myapp import conf, db, get_feature_flags, security_manager,event_logger
-from myapp.forms import MyBS3TextFieldWidget
+from myapp.forms import MyBS3TextFieldWidget,MyBS3TextAreaFieldWidget
 from wtforms.validators import DataRequired, Length, NumberRange, Optional,Regexp
 from flask import (
     abort,
@@ -164,15 +164,7 @@ class Project_ModelView_Base():
     related_views = [Project_User_ModelView,]
     add_columns = ['name','describe','expand']
     edit_columns = add_columns
-    edit_form_extra_fields={
-        'type': StringField(
-            _(datamodel.obj.lab('type')),
-            description="项目分组",
-            widget=MyBS3TextFieldWidget(value='org', readonly=1),
-            default='org',
-        )
-    }
-    add_form_extra_fields=edit_form_extra_fields
+
 
     # @pysnooper.snoop()
     def pre_add_get(self):
@@ -241,13 +233,14 @@ class Project_ModelView_Base():
 
 
 
-class Project_ModelView_job_template(Project_ModelView_Base,MyappModelView):
-    project_type = 'job-template'
-    base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
-    datamodel = SQLAInterface(Project)
-    label_title = '模板分类'
+# class Project_ModelView_job_template(Project_ModelView_Base,MyappModelView):
+#     project_type = 'job-template'
+#     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
+#     datamodel = SQLAInterface(Project)
+#     label_title = '模板分类'
+#
+# appbuilder.add_view(Project_ModelView_job_template,"模板分类",icon = 'fa-tasks',category = '项目组',category_icon = 'fa-users')
 
-appbuilder.add_view(Project_ModelView_job_template,"模板分类",icon = 'fa-tasks',category = '项目组',category_icon = 'fa-users')
 
 # 添加api
 class Project_ModelView_job_template_Api(Project_ModelView_Base,MyappModelRestApi):
@@ -256,18 +249,19 @@ class Project_ModelView_job_template_Api(Project_ModelView_Base,MyappModelRestAp
     project_type = 'job-template'
     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
     related_views = [Project_User_ModelView_Api, ]
+    label_title = '模板分类'
 
 appbuilder.add_api(Project_ModelView_job_template_Api)
 
 
-class Project_ModelView_org(Project_ModelView_Base,MyappModelView):
-    project_type='org'
-    base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
-    datamodel = SQLAInterface(Project)
-    label_title = '项目分组'
-
-appbuilder.add_view(Project_ModelView_org,"项目分组",icon = 'fa-sitemap',category = '项目组',category_icon = 'fa-users')
-
+# class Project_ModelView_org(Project_ModelView_Base,MyappModelView):
+#     project_type='org'
+#     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
+#     datamodel = SQLAInterface(Project)
+#     label_title = '项目分组'
+#
+# appbuilder.add_view(Project_ModelView_org,"项目分组",icon = 'fa-sitemap',category = '项目组',category_icon = 'fa-users')
+#
 
 # 添加api
 class Project_ModelView_org_Api(Project_ModelView_Base,MyappModelRestApi):
@@ -276,26 +270,44 @@ class Project_ModelView_org_Api(Project_ModelView_Base,MyappModelRestApi):
     project_type = 'org'
     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
     related_views = [Project_User_ModelView_Api, ]
+    label_title = '项目分组'
+    edit_form_extra_fields={
+        'type': StringField(
+            _(datamodel.obj.lab('type')),
+            description="项目分组",
+            widget=MyBS3TextFieldWidget(value='org', readonly=1),
+            default='org',
+        ),
+        'expand': StringField(
+            _(datamodel.obj.lab('expand')),
+            description='扩展参数。示例参数：<br>"cluster": "dev"<br>"node_selector": "org=public"<br>"volume_mount": "kubeflow-user-workspace(pvc):/mnt/;/data/k8s/../group1(hostpath):/mnt1;4G(memory):/dev/shm"<br>"SERVICE_EXTERNAL_IP":"xx.xx.xx.xx"',
+            widget=MyBS3TextAreaFieldWidget(),
+            default='{}',
+        )
+    }
+    add_form_extra_fields=edit_form_extra_fields
+
 
 appbuilder.add_api(Project_ModelView_org_Api)
 
 
 
-class Project_ModelView_train_model(Project_ModelView_Base,MyappModelView):
-    project_type = 'model'
-    base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
-    datamodel = SQLAInterface(Project)
-    label_title = '模型分组'
-
-# 添加视图和菜单
-appbuilder.add_view(Project_ModelView_train_model,"模型分组",icon = 'fa-address-book-o',category = '项目组',category_icon = 'fa-users')
-
+# class Project_ModelView_train_model(Project_ModelView_Base,MyappModelView):
+#     project_type = 'model'
+#     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
+#     datamodel = SQLAInterface(Project)
+#     label_title = '模型分组'
+#
+# # 添加视图和菜单
+# appbuilder.add_view(Project_ModelView_train_model,"模型分组",icon = 'fa-address-book-o',category = '项目组',category_icon = 'fa-users')
+#
 
 # 添加api
 class Project_ModelView_train_model_Api(Project_ModelView_Base,MyappModelRestApi):
     route_base = '/project_modelview/model/api'
     datamodel = SQLAInterface(Project)
     project_type = 'model'
+    label_title = '模型分组'
     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
     related_views = [Project_User_ModelView_Api, ]
 
