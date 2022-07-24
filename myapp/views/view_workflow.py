@@ -241,8 +241,8 @@ class Workflow_ModelView_Base(Crd_ModelView_Base):
         self.delete_workflow(workflow)
 
         flash('清理完成','warning')
-        self.update_redirect()
-        return redirect(self.get_redirect())
+        url = conf.get('MODEL_URLS',{}).get('workflow','')
+        return redirect(url)
 
     label_title = '运行实例'
     datamodel = SQLAInterface(Workflow)

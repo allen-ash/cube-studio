@@ -861,6 +861,9 @@ class Workflow(Model,Crd,MyappModelBase):
 
         return Markup(f'日志')
 
+    @property
+    def stop(self):
+        return Markup(f'<a href="/workflow_modelview/stop/{self.id}">停止</a>')
 
 # 定义model
 class Tfjob(Model,Crd,MyappModelBase):

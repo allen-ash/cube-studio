@@ -65,7 +65,7 @@ from sqlalchemy import and_, or_, select
 from .baseApi import (
     MyappModelRestApi
 )
-
+from myapp.views.view_team import Project_Filter,Project_Join_Filter,filter_join_org_project
 from flask_appbuilder import CompactCRUDMixin, expose
 import pysnooper,datetime,time,json
 conf = app.config
@@ -95,23 +95,21 @@ class Service_ModelView_base():
     cols_width={
         "name_url":{"type": "ellip2", "width": 200},
         "host_url": {"type": "ellip2", "width": 400},
-        "ip": {"type": "ellip2", "width": 300},
-        "deploy": {"type": "ellip2", "width": 300}
+        "ip": {"type": "ellip2", "width": 200},
+        "deploy": {"type": "ellip2", "width": 200},
+        "modified": {"type": "ellip2", "width": 150}
     }
     edit_columns = ['project','name', 'label','images','working_dir','command','env','resource_memory','resource_cpu','resource_gpu','replicas','ports','volume_mount','host',]
     base_order = ('id','desc')
     order_columns = ['id']
     label_title = '云原生服务'
     base_filters = [["id", Service_Filter, lambda: []]]  # 设置权限过滤器
-
+    add_form_query_rel_fields = {
+        "project": [["name", Project_Join_Filter, 'org']]
+    }
+    edit_form_query_rel_fields = add_form_query_rel_fields
 
     add_form_extra_fields={
-        "project": QuerySelectField(
-            _(datamodel.obj.lab('project')),
-            query_factory=filter_join_org_project,
-            allow_blank=True,
-            widget=Select2Widget()
-        ),
         "name":StringField(_(datamodel.obj.lab('name')), description='英文名(字母、数字、- 组成)，最长50个字符',widget=BS3TextFieldWidget(), validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
         "label":StringField(_(datamodel.obj.lab('label')), description='中文名', widget=BS3TextFieldWidget(),validators=[DataRequired()]),
         "images": StringField(_(datamodel.obj.lab('images')), description='镜像全称', widget=BS3TextFieldWidget(), validators=[DataRequired()]),
@@ -130,15 +128,11 @@ class Service_ModelView_base():
     }
 
     gpu_type = conf.get('GPU_TYPE')
-    if gpu_type == 'TENCENT':
-        add_form_extra_fields['resource_gpu'] = StringField(_(datamodel.obj.lab('resource_gpu')),
-                                                                  default='0,0',
-                                                                  description='gpu的资源使用限制(core,memory)，示例:10,2（10%的单卡核数和2*256M的显存），其中core为小于100的整数或100的整数倍，表示占用的单卡的百分比例，memory为整数，表示n*256M的显存',
-                                                                  widget=BS3TextFieldWidget())
-    if gpu_type == 'NVIDIA':
-        add_form_extra_fields['resource_gpu'] = StringField(_(datamodel.obj.lab('resource_gpu')), default='0',
-                                                                  description='gpu的资源使用限制(单位卡)，示例:1，2，训练任务每个容器独占整卡',
-                                                                  widget=BS3TextFieldWidget())
+
+
+    add_form_extra_fields['resource_gpu'] = StringField(_(datamodel.obj.lab('resource_gpu')), default='0',
+                                                              description='gpu的资源使用限制(单位卡)，示例:1，2，训练任务每个容器独占整卡',
+                                                              widget=BS3TextFieldWidget())
 
     edit_form_extra_fields = add_form_extra_fields
     # edit_form_extra_fields['name']=StringField(_(datamodel.obj.lab('name')), description='英文名(字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
@@ -270,7 +264,7 @@ class Service_ModelView_base():
                 username=service.created_by.username,
                 ports=service_ports,
                 selector=labels,
-                externalIPs=SERVICE_EXTERNAL_IP
+                external_ip=SERVICE_EXTERNAL_IP
             )
 
         # # 创建虚拟服务做代理

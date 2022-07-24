@@ -194,7 +194,7 @@ class Docker_ModelView_Base():
             k8s_client.create_debug_pod(namespace,
                                         name=pod_name,
                                         command=command,
-                                        labels={"app":"docker","user":g.user.usernmae,"pod-type":"docker"},
+                                        labels={"app":"docker","user":g.user.username,"pod-type":"docker"},
                                         args=None,
                                         volume_mount=json.loads(docker.expand).get('volume_mount',default_volume_mount) if docker.expand else default_volume_mount,
                                         working_dir='/mnt/%s'%docker.created_by.username,
@@ -337,12 +337,12 @@ class Docker_ModelView_Base():
 
 
 
-#
-# class Docker_ModelView(Docker_ModelView_Base,MyappModelView,DeleteMixin):
-#     datamodel = SQLAInterface(Docker)
-#
-# # 添加视图和菜单
-# appbuilder.add_view(Docker_ModelView,"镜像调试",href="/docker_modelview/list/",icon = 'fa-cubes',category = '在线开发',category_icon = 'fa-glass')
+
+class Docker_ModelView(Docker_ModelView_Base,MyappModelView,DeleteMixin):
+    datamodel = SQLAInterface(Docker)
+
+# 添加视图和菜单
+appbuilder.add_view(Docker_ModelView,"镜像调试",href="/docker_modelview/list/",icon = 'fa-cubes',category = '在线开发',category_icon = 'fa-glass')
 
 # 添加api
 class Docker_ModelView_Api(Docker_ModelView_Base,MyappModelRestApi):
