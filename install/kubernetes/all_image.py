@@ -4,7 +4,8 @@ kubeflow = [
     'gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0',
     'metacontroller/metacontroller:v0.3.0',
     'alpine:3.10',
-    "busybox"
+    "busybox",
+    "gcr.io/spark-operator/spark-operator:v1beta2-1.3.0-3.1.1"
 ]
 
 kubernetes_dashboard=['kubernetesui/dashboard:v2.2.0','kubernetesui/metrics-scraper:v1.0.6','quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0']
@@ -68,7 +69,6 @@ nni = ['frameworkcontrolle/frameworkcontrolle']
 
 cube_studio = [
     # 平台构建的镜像
-    'ccr.ccs.tencentyun.com/cube-studio/',
     'ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-cpu-base',
     'ccr.ccs.tencentyun.com/cube-studio/notebook:vscode-ubuntu-gpu-base',
     'ccr.ccs.tencentyun.com/cube-studio/notebook:jupyter-ubuntu-cpu-base',
@@ -146,6 +146,7 @@ cube_studio = [
 ]
 
 images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + new_serving + volcano + kube_batch + nni+ cube_studio
+images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + volcano + kube_batch + nni
 
 # images = new_pipline
 images = list(set(images))
