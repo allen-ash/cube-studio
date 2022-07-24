@@ -250,6 +250,21 @@ class Project_ModelView_job_template_Api(Project_ModelView_Base,MyappModelRestAp
     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
     related_views = [Project_User_ModelView_Api, ]
     label_title = '模板分类'
+    edit_form_extra_fields={
+        'type': StringField(
+            _(datamodel.obj.lab('type')),
+            description="模板分类",
+            widget=MyBS3TextFieldWidget(value=project_type, readonly=1),
+            default=project_type,
+        ),
+        'expand': StringField(
+            _(datamodel.obj.lab('expand')),
+            description='扩展参数。示例参数：<br>"index": 0   表示在pipeline编排中的模板列表的排序位置',
+            widget=MyBS3TextAreaFieldWidget(),
+            default='{}',
+        )
+    }
+    add_form_extra_fields=edit_form_extra_fields
 
 appbuilder.add_api(Project_ModelView_job_template_Api)
 
@@ -275,8 +290,8 @@ class Project_ModelView_org_Api(Project_ModelView_Base,MyappModelRestApi):
         'type': StringField(
             _(datamodel.obj.lab('type')),
             description="项目分组",
-            widget=MyBS3TextFieldWidget(value='org', readonly=1),
-            default='org',
+            widget=MyBS3TextFieldWidget(value=project_type, readonly=1),
+            default=project_type,
         ),
         'expand': StringField(
             _(datamodel.obj.lab('expand')),
@@ -310,6 +325,16 @@ class Project_ModelView_train_model_Api(Project_ModelView_Base,MyappModelRestApi
     label_title = '模型分组'
     base_filters = [["id", Project_Filter, project_type]]  # 设置权限过滤器
     related_views = [Project_User_ModelView_Api, ]
+    edit_form_extra_fields={
+        'type': StringField(
+            _(datamodel.obj.lab('type')),
+            description="模型分组",
+            widget=MyBS3TextFieldWidget(value=project_type, readonly=1),
+            default=project_type,
+        )
+    }
+    add_form_extra_fields=edit_form_extra_fields
+
 
 appbuilder.add_api(Project_ModelView_train_model_Api)
 

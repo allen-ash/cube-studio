@@ -439,21 +439,23 @@ def get_env_variable(var_name, default=None):
             error_msg = 'The environment variable {} was missing, abort...'.format(var_name)
             raise EnvironmentError(error_msg)
 
+# 当前控制器所在的集群
+ENVIRONMENT=get_env_variable('ENVIRONMENT','DEV').lower()
 
-# 数据库连接池的配置
-SQLALCHEMY_POOL_SIZE = 100
+SQLALCHEMY_POOL_SIZE = 300
 SQLALCHEMY_POOL_RECYCLE = 300  # 超时重连， 必须小于数据库的超时终端时间
-SQLALCHEMY_MAX_OVERFLOW = 300
+SQLALCHEMY_MAX_OVERFLOW = 800
 SQLALCHEMY_TRACK_MODIFICATIONS=False
 
+
 # redis的配置
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'admin')   #
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'admin')   # default must set None
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.getenv('REDIS_PORT', '6379')
 
 # 数据库配置地址
 SQLALCHEMY_DATABASE_URI = os.getenv('MYSQL_SERVICE','mysql+pymysql://root:admin@127.0.0.1:3306/myapp?charset=utf8')
-
+SQLALCHEMY_BINDS = {}
 from celery.schedules import crontab
 from werkzeug.contrib.cache import RedisCache
 
@@ -463,7 +465,7 @@ RESULTS_BACKEND = RedisCache(
 class CeleryConfig(object):
     # 任务队列
     BROKER_URL =  'redis://:%s@%s:%s/0'%(REDIS_PASSWORD,REDIS_HOST,str(REDIS_PORT)) if REDIS_PASSWORD else 'redis://%s:%s/0'%(REDIS_HOST,str(REDIS_PORT))
-    # celery_task的定义模块地址
+    # celery_task的定义模块
     CELERY_IMPORTS = (
         'myapp.tasks',
     )
@@ -507,7 +509,12 @@ class CeleryConfig(object):
             'rate_limit': '1/s',
             'ignore_result': True,
         },
-        # 上传workflow信息
+		# 异步升级服务
+        'task.upgrade_service': {
+            'rate_limit': '1/s',
+            'ignore_result': True,
+        },
+		# 上传workflow信息
         'task.upload_workflow': {
             'rate_limit': '10/s',
             'ignore_result': True,
@@ -517,46 +524,46 @@ class CeleryConfig(object):
 
     # 定时任务的配置项，key为celery_task的name，值是调度配置
     CELERYBEAT_SCHEDULE = {
-        'task_task1': {
+        'task_delete_workflow': {
             'task': 'task.delete_workflow',   # 定时删除旧的workflow
             # 'schedule': 10.0,
             'schedule': crontab(minute='1'),
         },
-        'task_task2': {
+        'task_make_timerun_config': {
             'task': 'task.make_timerun_config',  # 定时产生定时任务的yaml信息
             # 'schedule': 10.0,     #10s中执行一次
             'schedule': crontab(minute='*/5'),
         },
-        'task_task4': {
+        'task_delete_old_data': {
             'task': 'task.delete_old_data',   # 定时删除旧数据
             # 'schedule': 100.0,     #10s中执行一次
             'schedule': crontab(minute='1', hour='1'),
         },
-        'task_task5': {
+        'task_delete_notebook': {
             'task': 'task.delete_notebook',  # 定时停止notebook
             # 'schedule': 10.0,
             'schedule': crontab(minute='1', hour='4'),
         },
-        # 'task_task6': {
+        # 'task_push_workspace_size': {
         #     'task': 'task.push_workspace_size',   # 定时推送用户文件大小
         #     # 'schedule': 10.0,
         #     'schedule': crontab(minute='10', hour='10'),
         # },
-        'task_task6':{
+        'task_check_pipeline_run':{
             'task':"task.check_pipeline_run",   # 定时检查pipeline的运行时长
             'schedule': crontab(minute='10', hour='11'),
         },
-        'task_task8': {
+        'task_delete_debug_docker': {
             'task': 'task.delete_debug_docker',   # 定时删除debug的pod
             # 'schedule': 10.0,
             'schedule': crontab(minute='30', hour='22'),
         },
-        'task_task9': {
+        'task_watch_gpu': {
             'task': 'task.watch_gpu',   # 定时推送gpu的使用情况
             # 'schedule': 10.0,
             'schedule': crontab(minute='10',hour='8-23/2'),
         },
-        'task_task10': {
+        'task_adjust_node_resource': {
             'task': 'task.adjust_node_resource',  # 定时在多项目组间进行资源均衡
             # 'schedule': 10.0,
             'schedule': crontab(minute='*/10'),
@@ -792,6 +799,8 @@ HOSTALIASES='''
 # 默认服务代理的ip
 SERVICE_EXTERNAL_IP=[]
 
+# json响应是否按字母顺序排序
+JSON_SORT_KEYS=False
 # 链接菜单
 ALL_LINKS=[
     {
@@ -867,8 +876,26 @@ GRAFANA_CLUSTER_PATH="/grafana/d/all-node/all-node?var-org="
 # 节点资源监控地址
 GRAFANA_NODE_PATH="/grafana/d/node/node?var-node="
 
-# 当前控制器所在的集群
-ENVIRONMENT=get_env_variable('ENVIRONMENT','DEV').lower()
+
+MODEL_URLS = {
+    "notebook": "/frontend/dev/dev_online/notebook",
+    "docker": "/frontend/dev/images/docker",
+    "repository": "/frontend/dev/images/docker_repository",
+    "template_images": "/frontend/dev/images/template_images",
+    "job_template": "/frontend/train/train_template/job_template",
+    "pipeline": "/frontend/train/train_task/pipeline",
+    "runhistory": "/frontend/train/train_task/runhistory",
+    "workflow": "/frontend/train/train_task/workflow",
+    "nni": "/frontend/train/train_hyperparameter/nni",
+    "service": "/frontend/service/k8s_service",
+    "inferenceservice": "/frontend/service/inferenceservice/inferenceservice_manager",
+    "train_model": "/frontend/service/inferenceservice/model_manager",
+    "metadata_metric": "/frontend/dataleap/metadata/metadata_metric",
+    "dimension": "/frontend/dataleap/metadata/metadata_dimension",
+    "metadata_table": "/frontend/dataleap/metadata/metadata_table",
+}
+
+
 # 所有训练集群的信息
 CLUSTERS={
     # 和project expand里面的名称一致

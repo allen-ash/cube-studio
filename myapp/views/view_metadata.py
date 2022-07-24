@@ -127,8 +127,9 @@ class Metadata_table_ModelView_base():
     }
 
     edit_columns = add_columns
-    list_columns = ['db', 'table', 'owner','describe','field','warehouse_level', 'storage_cost']
+    list_columns = ['app','db', 'table', 'owner','describe','field','warehouse_level', 'storage_cost']
     cols_width = {
+        "app": {"type": "ellip2", "width": 150},
         "db":{"type": "ellip2", "width": 250},
         "table":{"type": "ellip2", "width": 400},
         "owner":{"type": "ellip2", "width": 150},
