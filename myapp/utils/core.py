@@ -506,17 +506,17 @@ def dag_json_demo():
 def job_template_args_definition():
     demo = '''
 {
-    "group1":{               # 属性分组，仅做web显示使用
-       "--attr1":{             # 属性名
+    "group1":{               # 参数分组，仅做web显示使用
+       "--attr1":{           # 参数名
         "type":"str",        # int,str,text,bool,enum,float,multiple,date,datetime,file,dict,list,json
-        "item_type": "",     # 在type为enum,multiple,list时每个子属性的类型
-        "label":"属性1",      # 中文名
+        "item_type": "",     # 在type为enum,multiple,list时每个子参数的类型
+        "label":"参数1",      # 中文名
         "require":1,         # 是否必须
         "choice":[],         # type为enum/multiple时，可选值
         "range":"$min,$max", # 最小最大取值，在int,float时使用，包含$min，但是不包含$max
         "default":"",        # 默认值
         "placeholder":"",    # 输入提示内容
-        "describe":"这里是这个字段的描述和备注",
+        "describe":"这里是这个参数的描述和备注",
         "editable":1,        # 是否可修改
         "condition":"",      # 显示的条件
         "sub_args": {        # 如果type是dict或者list对应下面的参数
