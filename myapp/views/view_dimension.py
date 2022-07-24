@@ -200,7 +200,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         "label":{"type": "ellip2", "width": 300},
         "owner": {"type": "ellip2", "width": 300},
         "describe": {"type": "ellip2", "width": 300},
-        "operate_html":{"type": "ellip2", "width": 350}
+        "operate_html":{"type": "ellip2", "width": 400}
     }
     spec_label_columns = {
         "sqllchemy_uri":"链接串地址",
@@ -208,7 +208,6 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
         "columns": "列信息",
         "table_html":"表名",
         "table_name":"表名"
-
     }
     base_filters = [["id", Dimension_table_Filter, lambda: []]]  # 设置权限过滤器
 
@@ -390,9 +389,10 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
 
 
 
-    @action("create", __("创建远程表"), __("创建远程表?"), "fa-trash", single=True)
-    # @pysnooper.snoop(watch_explode=('table','col'))
-    def create_external_table(self, item):
+    @expose("/create_external_table/<dim_id>", methods=["GET"])
+    # @pysnooper.snoop()
+    def create_external_table(self, dim_id):
+        item = db.session.query(Dimension_table).filter_by(id=int(dim_id)).first()
         sqllchemy_uri = item.sqllchemy_uri
         if sqllchemy_uri:
 
@@ -435,6 +435,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                     if sql:
                         dbsession.execute(sql)
                         dbsession.commit()
+                    flash('创建新表成功', 'success')
                 else:
                     exist_columns=list(company_data.head().to_dict()['column_name'].values())
                     print(exist_columns)
@@ -448,9 +449,11 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                                     print(sql)
                                     dbsession.execute(sql)
                                     dbsession.commit()
+                                    flash('增加新字段成功', 'success')
                                 except Exception as e:
                                     dbsession.rollback()
                                     print(e)
+                                    flash('增加新字段失败：'+str(e), 'error')
 
                 dbsession.close()
                 # 如果远程有表，就增加字段
@@ -483,9 +486,11 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                                     print(sql)
                                     dbsession.execute(sql)
                                     dbsession.commit()
+                                    flash('增加新字段成功', 'success')
                                 except Exception as e:
                                     dbsession.rollback()
                                     print(e)
+                                    flash('增加新字段失败：'+str(e), 'error')
 
 
                 except sqlalchemy.exc.NoSuchTableError as e:
@@ -495,7 +500,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                     # 如果远程没有表，就建表
                     sql = '''
                     CREATE TABLE if not exists  {table_name}  (
-                        id BIGINT PRIMARY KEY auto_increment,
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
                         {columns_sql}
                     );
                                     '''.format(
@@ -512,9 +517,13 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
                     if sql:
                         dbsession.execute(sql)
                         dbsession.commit()
+                        flash('创建新表成功','success')
 
                 dbsession.close()
                 # 如果远程有表，就增加字段
+
+        url_path = conf.get('MODEL_URLS', {}).get("dimension")+'?targetId='+dim_id
+        return redirect(url_path)
 
 
     def add_more_info(self,response,**kwargs):

@@ -5,7 +5,8 @@ kubeflow = [
     'metacontroller/metacontroller:v0.3.0',
     'alpine:3.10',
     "busybox",
-    "gcr.io/spark-operator/spark-operator:v1beta2-1.3.0-3.1.1"
+    "gcr.io/spark-operator/spark-operator:v1beta2-1.3.0-3.1.1",
+    "ccr.ccs.tencentyun.com/cube-studio/kubeflow:training-operator"
 ]
 
 kubernetes_dashboard=['kubernetesui/dashboard:v2.2.0','kubernetesui/metrics-scraper:v1.0.6','quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0']
