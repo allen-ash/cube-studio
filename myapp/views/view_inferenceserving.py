@@ -140,7 +140,7 @@ class InferenceService_ModelView_base():
         "transformer":StringField(_(datamodel.obj.lab('transformer')), default=InferenceService.transformer.default.arg,description='前后置处理逻辑，用于原生开源框架的请求预处理和响应预处理，目前仅支持kfserving下框架',widget=BS3TextFieldWidget()),
         'resource_gpu':StringField(_(datamodel.obj.lab('resource_gpu')), default='0',
                                                         description='gpu的资源使用限制(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100),目前支持T4/V100/A100/VGPU',
-                                                        widget=BS3TextFieldWidget()),
+                                                        widget=BS3TextFieldWidget(),validators=[DataRequired()]),
 
         'sidecar': MySelectMultipleField(
             _(datamodel.obj.lab('sidecar')), default='',

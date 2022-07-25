@@ -239,6 +239,20 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
             default='',
             validators=[DataRequired(),Regexp("^[a-z][a-z0-9_\-]*[a-z0-9]$")]
         ),
+        "label": StringField(
+            label=_(datamodel.obj.lab('label')),
+            description='中文名',
+            widget=BS3TextFieldWidget(),
+            default='',
+            validators=[DataRequired()]
+        ),
+        "describe": StringField(
+            label=_(datamodel.obj.lab('describe')),
+            description='描述',
+            widget=BS3TextFieldWidget(),
+            default='',
+            validators=[DataRequired()]
+        ),
         "app":SelectField(
             label=_(datamodel.obj.lab('app')),
             description='产品分类',
@@ -252,6 +266,7 @@ class Dimension_table_ModelView_Api(MyappModelRestApi):
             default='',
             description='责任人,逗号分隔的多个用户',
             widget=BS3TextFieldWidget(),
+            validators=[DataRequired()]
         ),
 
     }

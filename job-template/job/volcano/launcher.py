@@ -319,7 +319,7 @@ def launch_volcanojob(name, num_workers, image,working_dir, worker_command):
         # 实时打印日志,由于stern跟踪时长有限制，所以会每个小时重启一次ster进程
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
         print('begin follow log\n%s %s'%(line,datetime.datetime.now()), flush=True)
-        command = "stern %s --namespace %s --tail 10 --template '{{.PodName}} {{.Message}}'"%(name,KFJ_NAMESPACE)
+        command = "stern %s --namespace %s --since 10s --template '{{.PodName}} {{.Message}}'"%(name,KFJ_NAMESPACE)
         print(command, flush=True)
         run_shell(command)
         print('%s %s\nend follow log'%(line,datetime.datetime.now()), flush=True)

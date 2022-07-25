@@ -92,7 +92,7 @@ class Training_Model_ModelView_Base():
     base_permissions = ['can_add', 'can_edit', 'can_delete', 'can_list', 'can_show']  # 默认为这些
     base_order = ('changed_on', 'desc')
     order_columns = ['id']
-    list_columns = ['name','project_url','pipeline_url','version','creator','modified','deploy']
+    list_columns = ['project_url','name','version','pipeline_url','creator','modified','deploy']
     add_columns = ['project','pipeline','name','version','describe','path','framework','run_id','run_time','metrics','md5','api_type']
     edit_columns = add_columns
     add_form_query_rel_fields = {
@@ -224,43 +224,10 @@ class Training_Model_ModelView_Base():
         else:
             flash('服务版本已存在', 'success')
         import urllib.parse
-        from urllib.parse import urlencode, quote_plus
-        url = conf.get('MODEL_URLS',{}).get('inferenceservice','')+'?filter=%5B%7B%22key%22%3A%22model_name%22%2C%22value%22%3A%22{model_name}%22%7D%5D'.format(model_name=exist_inference.model_name)
+
+        url = conf.get('MODEL_URLS',{}).get('inferenceservice','')+'?filter='+urllib.parse.quote(json.dumps([{"key":"model_name","value":exist_inference.model_name}],ensure_ascii=False))
         print(url)
         return redirect(url)
-
-    @expose("/api/deploy/<env>", methods=["GET", 'POST'])
-    # @pysnooper.snoop()
-    def api_deploy(self,env):
-        try:
-            model_project_name = request.json.get('model_project_name', '')
-            pipeline_id = int(request.json.get('pipeline_id', '0'))
-            run_id = request.json.get('run_id', '')
-            model_path = request.json.get('model_path', '')
-            model_name = request.json.get('model_name', '')
-            model_project = db.session.query(Project).filter_by(name=model_project_name).filter_by(type='model').first()
-            train_model=None
-            if pipeline_id and run_id:
-                # pipeline = db.session.query(Pipeline).filter_by(id=pipeline_id).first()
-                train_model = db.session.query(Training_Model).filter_by(pipeline_id=pipeline_id).filter_by(run_id=run_id).first()
-            elif model_path and model_name:
-                train_model = db.session.query(Training_Model).filter_by(path=model_path).filter_by(name=model_name).first()
-
-            if train_model and env in ['test','prod']:
-                if env=='test':
-                    self.deploy_test(train_model.id)
-                    return json_response(message='deploy %s success' % env, status=0, result={})
-                elif env=='prod' and model_project:
-                    train_model.project=model_project
-                    db.session.commit()
-                    self.deploy_prod(train_model.id,force=True)
-                    return json_response(message='deploy %s success'%env,status=0,result={})
-
-
-            return json_response(message='no pipeline, run_id, model_project or env not in test,prod',status=1,result={})
-        except Exception as e:
-            return json_response(message=str(e),status=1,result={})
-
 
 
 class Training_Model_ModelView(Training_Model_ModelView_Base,MyappModelView,DeleteMixin):
