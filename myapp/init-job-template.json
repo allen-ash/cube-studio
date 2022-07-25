@@ -208,12 +208,11 @@
         "job_template_args":{
             "参数":{
                 "-n":{
-                    "type":"int",
+                    "type":"str",
                     "item_type":"",
                     "label":"分布式任务worker的数量",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"$min,$max",
                     "default":"3",
@@ -231,7 +230,6 @@
                     "label":"每个worker的初始化脚本文件地址，用来安装环境",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"",
                     "default":"",
@@ -249,10 +247,9 @@
                     "label":"python启动命令，例如 python3 /mnt/xx/xx.py",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"python /mnt/admin/demo.py",
                     "placeholder":"",
                     "describe":"python启动命令，例如 python3 /mnt/xx/xx.py",
                     "editable":1,
