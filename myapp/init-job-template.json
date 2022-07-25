@@ -577,7 +577,7 @@
         "job_template_args":{
             "训练":{
                 "--train_csv_file_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"训练集csv路径",
                     "require":1,
@@ -658,7 +658,7 @@
                     }
                 },
                 "--eval_result_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"模型评估报告保存路径",
                     "require":1,
@@ -668,7 +668,7 @@
                     "range":"",
                     "default":"",
                     "placeholder":"",
-                    "describe":"模型评估报告保存路径。默认为空，想看模型评估报告就填。",
+                    "describe":"模型评估报告保存路径。默认为空，不进行模型评估。",
                     "editable":1,
                     "condition":"",
                     "sub_args":{
@@ -676,7 +676,7 @@
                     }
                 },
                 "--model_save_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"模型文件保存路径",
                     "require":1,
@@ -696,7 +696,7 @@
             },
             "离线推理":{
                 "--model_load_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"模型加载路径",
                     "require":1,
@@ -714,7 +714,7 @@
                     }
                 },
                 "--predict_csv_file_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"预测数据集csv路径",
                     "require":1,
@@ -732,7 +732,7 @@
                     }
                 },
                 "--predict_result_path":{
-                    "type":"text",
+                    "type":"str",
                     "item_type":"",
                     "label":"预测结果保存路径",
                     "require":1,
@@ -1228,7 +1228,7 @@
                     }
                 },
                 "--num_worker":{
-                    "type":"int",
+                    "type":"str",
                     "item_type":"str",
                     "label":"分布式训练worker的数目",
                     "require":1,
@@ -1405,7 +1405,7 @@
 
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"3",
                     "placeholder":"",
                     "describe":"worker数量",
                     "editable":1,
@@ -1459,7 +1459,7 @@
 
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"3",
                     "placeholder":"",
                     "describe":"worker数量",
                     "editable":1,
@@ -1514,7 +1514,7 @@
 
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"/mnt/xx",
                     "placeholder":"启动目录",
                     "describe":"启动目录",
                     "editable":1,
@@ -1871,7 +1871,7 @@
 
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"/mnt/xx",
                     "placeholder":"",
                     "describe":"推理容器工作目录",
                     "editable":1,
