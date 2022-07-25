@@ -91,8 +91,8 @@ def run_shell(shell):
         if status == 0:  # 判断子进程是否结束
             print('shell finish %s'%status,flush=True)
             break
-        # if status==-9 or status==-15 or status==143:   # 外界触发kill
-        if status!=0:  # 外界触发kill
+        if status==-9 or status==-15 or status==143:   # 外界触发kill
+        # if status!=0:  # 外界触发kill
             print('shell finish %s'%status,flush=True)
             break
 
@@ -320,7 +320,7 @@ def launch_volcanojob(name, num_workers, image,working_dir, worker_command):
         # 实时打印日志,由于stern跟踪时长有限制，所以会每个小时重启一次ster进程
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
         print('begin follow log\n%s %s'%(line,datetime.datetime.now()), flush=True)
-        command = '''stern %s --namespace %s --since 10s --template '{{.PodName}} {{.Message}}' {{"\\n"}} '''%(name,KFJ_NAMESPACE)
+        command = '''stern %s --namespace %s --since 10s --template '{{.PodName}} {{.Message}} {{"\\n"}}' '''%(name,KFJ_NAMESPACE)
         print(command, flush=True)
         run_shell(command)
         print('%s %s\nend follow log'%(line,datetime.datetime.now()), flush=True)
