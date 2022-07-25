@@ -874,6 +874,10 @@ class MyappModelRestApi(ModelRestApi):
                 if type(data[key])==dict:
                     data[key]=str(getattr(item,key))
 
+        # 按show_columns的顺序显示
+        data = sorted(data.items(), key=lambda kv: self.show_columns.index(kv[0]) if kv[0] in self.show_columns else 1000)
+        data = dict(zip([x[0] for x in data], [x[1] for x in data]))
+
         _response['data'] = data # item.to_json()
         _response['data'][self.primary_key] = pk
 
