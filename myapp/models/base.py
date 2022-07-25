@@ -249,7 +249,10 @@ class MyappModelBase():
         "source_type":"数据源类型",
         "priority":"优先级",
         "owner": "责任人",
-
+        "us_pipeline": "任务流",
+        "us_pipeline_id": "任务流id",
+        "us_task": "任务",
+        "us_task_id": "任务id",
         "access":"接入",
         "responsible":"责任人",
         "cycle_unit":"周期单位",

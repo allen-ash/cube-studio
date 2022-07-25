@@ -381,16 +381,10 @@ export default function DataSearch() {
                                         onChange={(value) => {
                                             setTabState({ appGroup: value })
                                             // setAppGroup(value)
-                                        }} options={['g_sng_qqmusic_tme_music_dataplatform',
-                                            'g_other_tme_privacy_computing_mdatapricommon',
-                                            'g_other_tme_privacy_computing_mdataprikugou',
-                                            'g_other_tme_privacy_computing_mdataprikuwo',
-                                            'g_other_tme_privacy_computing_mdataprilanren',
-                                            'g_other_tme_privacy_computing_mdatapriqqmusic',
-                                            'g_other_tme_privacy_computing_mdatapriqmkg',
-                                            'g_sng_qqmusic_tme_music_dataprivacy',
-                                            'g_other_tme_infrastructure_tme_central_kuwo',
-                                            'g_sng_qqmusic_g_sng_qqmusic_lrts'
+                                        }} options={['队里1',
+                                            '队里2',
+                                            '队里3',
+                                            '队里4'
                                         ]} placeholder="应用组" width={'400px'} />
                                     <Button
                                         type='default'

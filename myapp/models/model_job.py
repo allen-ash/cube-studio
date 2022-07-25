@@ -109,7 +109,7 @@ class Job_Template(Model,AuditMixinNullable,MyappModelBase):
         Images, foreign_keys=[images_id]
     )
     hostAliases = Column(Text)   # host文件
-    describe = Column(String(500), nullable=False,unique=True)
+    describe = Column(String(500), nullable=False)
     workdir=Column(String(400))
     entrypoint=Column(String(200))
     args=Column(Text)
