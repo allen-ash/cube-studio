@@ -275,13 +275,13 @@ def watch_pod_log(name,namespace,container='main'):
     print('end follow log')
 
 
-@pysnooper.snoop(watch_explode=())
+# @pysnooper.snoop(watch_explode=())
 def main():
     k8s_client = K8s()
 
     # 删除旧的mpi
     if KFJ_RUN_ID:
-        print('begin delete old mpijob: run-id %s'%KFJ_RUN_ID)
+        print('begin delete old mpijob: run-id %s'%KFJ_RUN_ID,flush=True)
         k8s_client.delete_crd(group=CRD_INFO['group'],
                               version=CRD_INFO['version'],
                               plural=CRD_INFO['plural'],
@@ -290,7 +290,7 @@ def main():
         time.sleep(60)
     job_name = default_job_name()
     mpijob_json = make_mpijob(job_name)
-    print('begin create new mpijob: run-id %s' % KFJ_TASK_NAME)
+    print('begin create new mpijob: run-id %s' % KFJ_TASK_NAME,flush=True)
     k8s_client.create_crd(
         group=CRD_INFO['group'],
         version=CRD_INFO['version'],
