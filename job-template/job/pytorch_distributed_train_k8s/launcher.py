@@ -64,11 +64,6 @@ print(GPU_TYPE,GPU_RESOURCE)
 
 
 def default_job_name():
-    # import re
-    # ctx = KFJobContext.get_context()
-    # p_name = str(ctx.pipeline_name) or ''
-    # p_name = re.sub(r'[^-a-z0-9]', '-', p_name)
-    # return "-".join([str(ctx.creator), p_name, "pytorchjob", str(uuid.uuid1())])
     name = "pytorchjob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
     return name[0:54]
 

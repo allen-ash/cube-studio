@@ -33,7 +33,8 @@ KFJ_RUN_ID = os.getenv('KFJ_RUN_ID', '')
 KFJ_CREATOR = os.getenv('KFJ_CREATOR', '')
 KFJ_RUNNER = os.getenv('KFJ_RUNNER')
 KFJ_PIPELINE_NAME = os.getenv('KFJ_PIPELINE_NAME', '')
-KFJ_TASK_NAME = ("mpijob-" +KFJ_PIPELINE_NAME.replace('_',"-")+"-"+ str(uuid.uuid1()))[0:54]
+KFJ_TASK_NAME = os.getenv('KFJ_TASK_NAME', '')
+
 KFJ_TASK_IMAGES = os.getenv('KFJ_TASK_IMAGES', '')
 KFJ_TASK_VOLUME_MOUNT = os.getenv('KFJ_TASK_VOLUME_MOUNT', '')
 KFJ_TASK_RESOURCE_CPU = os.getenv('KFJ_TASK_RESOURCE_CPU', '')
@@ -70,7 +71,9 @@ CRD_INFO={
     "timeout": 60 * 60 * 24 * 2
 }
 
-
+def default_job_name():
+    name = "mpijob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
+    return name[0:54]
 
 # @pysnooper.snoop()
 def make_mpijob(name):
@@ -98,11 +101,13 @@ def make_mpijob(name):
                         "metadata": {
                             "labels": {
                                 "pipeline-id": KFJ_PIPELINE_ID,
+                                "task-id": KFJ_TASK_ID,
                                 "pipeline-name": KFJ_PIPELINE_NAME,
                                 "task-name": KFJ_TASK_NAME,
                                 'rtx-user': KFJ_RUNNER,
                                 "component": name,
                                 "type": "mpijob",
+                                "pod-type":"Launcher",
                                 "run-id": os.getenv('KFJ_RUN_ID', 'unknown'),
                             }
                         },
@@ -174,11 +179,13 @@ def make_mpijob(name):
                         "metadata": {
                             "labels": {
                                 "pipeline-id": KFJ_PIPELINE_ID,
+                                "task-id": KFJ_TASK_ID,
                                 "pipeline-name": KFJ_PIPELINE_NAME,
                                 "task-name": KFJ_TASK_NAME,
                                 'rtx-user': KFJ_RUNNER,
                                 "component": name,
                                 "type": "mpijob",
+                                "pod-type": "Worker",
                                 "run-id": os.getenv('KFJ_RUN_ID', 'unknown'),
                             }
                         },
@@ -287,8 +294,8 @@ def main():
                               namespace=KFJ_NAMESPACE,
                               labels={"run-id":KFJ_RUN_ID})
         time.sleep(60)
-
-    mpijob_json = make_mpijob(KFJ_TASK_NAME)
+    job_name = default_job_name()
+    mpijob_json = make_mpijob(job_name)
     print('begin create new mpijob: run-id %s' % KFJ_TASK_NAME)
     k8s_client.create_crd(
         group=CRD_INFO['group'],
@@ -300,13 +307,11 @@ def main():
     # 等待创建完成
     time.sleep(200)
 
-    pods = k8s_client.get_pods(namespace=KFJ_NAMESPACE,labels={
-        "mpi_job_name": KFJ_TASK_NAME
-    })
+    pods = k8s_client.get_pods(namespace=KFJ_NAMESPACE,labels={"component": job_name,"pod-type":"Launcher"})
     if pods:
         pod=pods[0]
         print('begin listen mpijob launcher pod %s' % pod['name'])
-        k8s_client.watch_pod_log(name=pod['name'],namespace=KFJ_NAMESPACE)
+        k8s_client.watch_pod_log(name=pod['name'],namespace=KFJ_NAMESPACE)  # 阻塞的，直到pod结束
         crd = k8s_client.get_one_crd(
             group=CRD_INFO['group'],
             version=CRD_INFO['version'],
@@ -314,14 +319,14 @@ def main():
             namespace=KFJ_NAMESPACE,
             name=KFJ_TASK_NAME
         )
-        print('begin delete mpijob %s' % KFJ_TASK_NAME)
-        # 删除旧的mpi
-        if KFJ_RUN_ID:
-            k8s_client.delete_crd(group=CRD_INFO['group'],
-                                  version=CRD_INFO['version'],
-                                  plural=CRD_INFO['plural'],
-                                  namespace=KFJ_NAMESPACE,
-                                  labels={"run-id": KFJ_RUN_ID})
+        # print('begin delete mpijob %s' % KFJ_TASK_NAME)
+        # # 删除旧的mpi
+        # if KFJ_RUN_ID:
+        #     k8s_client.delete_crd(group=CRD_INFO['group'],
+        #                           version=CRD_INFO['version'],
+        #                           plural=CRD_INFO['plural'],
+        #                           namespace=KFJ_NAMESPACE,
+        #                           labels={"run-id": KFJ_RUN_ID})
         print(crd)
         if crd['status']=='Succeeded':
             exit(0)
