@@ -1597,7 +1597,7 @@ class K8s():
             _preload_content=False,
         )
         for line in logs:
-            print(line.encode('utf-8'))
+            print(str(line,'utf-8'))
 
         print('end follow log')
 
