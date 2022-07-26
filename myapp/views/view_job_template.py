@@ -117,7 +117,8 @@ class Job_Template_ModelView_Base():
         "describe": StringField(
             _(datamodel.obj.lab('describe')),
             description="模板的描述将直接显示在pipeline编排界面",
-            widget=BS3TextFieldWidget()
+            widget=BS3TextFieldWidget(),
+            validators=[DataRequired()]
         ),
         "version": SelectField(
             _(datamodel.obj.lab('version')),
@@ -180,7 +181,7 @@ class Job_Template_ModelView_Base():
             _(datamodel.obj.lab('accounts')),
             description='k8s的ServiceAccount，在此类任务运行时会自动挂载此账号，多用于模板用于k8s pod/cr时使用',
             widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
-            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
+            validators=[]
         ),
         "privileged":BooleanField(
             _(datamodel.obj.lab('privileged')),
