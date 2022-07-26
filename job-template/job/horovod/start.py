@@ -22,18 +22,18 @@ base_dir = os.path.split(os.path.realpath(__file__))[0]
 KFJ_NAMESPACE = os.getenv('KFJ_NAMESPACE', '')
 KFJ_TASK_ID = os.getenv('KFJ_TASK_ID', '')
 # KFJ_TASK_NAME = os.getenv('KFJ_TASK_NAME', '')
-KFJ_TASK_NAME = "mpijob-" + str(uuid.uuid1())
+
 task_node_selectors = re.split(',|;|\n|\t', os.getenv('KFJ_TASK_NODE_SELECTOR', ''))
 KFJ_TASK_NODE_SELECTOR = {}
 for task_node_selector in task_node_selectors:
     KFJ_TASK_NODE_SELECTOR[task_node_selector.split('=')[0]] = task_node_selector.split('=')[1]
-
 
 KFJ_PIPELINE_ID = os.getenv('KFJ_PIPELINE_ID', '')
 KFJ_RUN_ID = os.getenv('KFJ_RUN_ID', '')
 KFJ_CREATOR = os.getenv('KFJ_CREATOR', '')
 KFJ_RUNNER = os.getenv('KFJ_RUNNER')
 KFJ_PIPELINE_NAME = os.getenv('KFJ_PIPELINE_NAME', '')
+KFJ_TASK_NAME = ("mpijob-" +KFJ_PIPELINE_NAME.replace('_',"-")+"-"+ str(uuid.uuid1()))[0:54]
 KFJ_TASK_IMAGES = os.getenv('KFJ_TASK_IMAGES', '')
 KFJ_TASK_VOLUME_MOUNT = os.getenv('KFJ_TASK_VOLUME_MOUNT', '')
 KFJ_TASK_RESOURCE_CPU = os.getenv('KFJ_TASK_RESOURCE_CPU', '')
