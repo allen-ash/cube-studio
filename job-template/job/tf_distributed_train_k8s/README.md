@@ -73,4 +73,11 @@ TASK_RESOURCE_MEMORY=4G
 TASK_RESOURCE_GPU=0
 ```
 
+示例代码
+
+启动脚本
+```
+pip install 
+python demo.py
+```
 示例代码 [demo.py](https://github.com/kubeflow/training-operator/blob/master/examples/tensorflow/dist-mnist/dist_mnist.py)
