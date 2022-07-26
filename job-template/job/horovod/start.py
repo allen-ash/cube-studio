@@ -113,12 +113,6 @@ def make_mpijob(name):
                         },
                         "spec": {
                             "volumes": k8s_volumes,
-                            "imagePullSecrets": [
-                                {
-                                    "name": "hubsecret"
-                                }
-                            ],
-
                             "containers": [
                                 {
                                     "image": WORK_IMAGES,
