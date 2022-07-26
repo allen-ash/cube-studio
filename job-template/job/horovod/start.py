@@ -107,7 +107,7 @@ def make_mpijob(name):
                                 'rtx-user': KFJ_RUNNER,
                                 "component": name,
                                 "type": "mpijob",
-                                "pod-type":"Launcher",
+                                "mpi-role":"Launcher",
                                 "run-id": os.getenv('KFJ_RUN_ID', 'unknown'),
                             }
                         },
@@ -185,7 +185,7 @@ def make_mpijob(name):
                                 'rtx-user': KFJ_RUNNER,
                                 "component": name,
                                 "type": "mpijob",
-                                "pod-type": "Worker",
+                                "mpi-role": "Worker",
                                 "run-id": os.getenv('KFJ_RUN_ID', 'unknown'),
                             }
                         },
@@ -307,7 +307,7 @@ def main():
     # 等待创建完成
     time.sleep(200)
 
-    pods = k8s_client.get_pods(namespace=KFJ_NAMESPACE,labels={"component": job_name,"pod-type":"Launcher"})
+    pods = k8s_client.get_pods(namespace=KFJ_NAMESPACE,labels={"component": job_name,"mpi-role":"Launcher"})
     if pods:
         pod=pods[0]
         print('begin listen mpijob launcher pod %s' % pod['name'])
@@ -317,7 +317,7 @@ def main():
             version=CRD_INFO['version'],
             plural=CRD_INFO['plural'],
             namespace=KFJ_NAMESPACE,
-            name=KFJ_TASK_NAME
+            name=job_name
         )
         # print('begin delete mpijob %s' % KFJ_TASK_NAME)
         # # 删除旧的mpi
@@ -334,15 +334,14 @@ def main():
             exit(1)
     else:
         print('cluster fail build')
-        print('begin delete mpijob %s' % KFJ_TASK_NAME)
-        # 删除旧的mpi
-        if KFJ_RUN_ID:
-            k8s_client.delete_crd(group=CRD_INFO['group'],
-                                  version=CRD_INFO['version'],
-                                  plural=CRD_INFO['plural'],
-                                  namespace=KFJ_NAMESPACE,
-                                  labels={"run-id": KFJ_RUN_ID})
-
+        # print('begin delete mpijob %s' % KFJ_TASK_NAME)
+        # # 删除旧的mpi
+        # if KFJ_RUN_ID:
+        #     k8s_client.delete_crd(group=CRD_INFO['group'],
+        #                           version=CRD_INFO['version'],
+        #                           plural=CRD_INFO['plural'],
+        #                           namespace=KFJ_NAMESPACE,
+        #                           labels={"run-id": KFJ_RUN_ID})
         exit(1)
 
 
