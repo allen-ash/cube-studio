@@ -754,7 +754,7 @@
     },
     "tfjob":{
         "project_name":"tf分布式",
-        "image_name":"ccr.ccs.tencentyun.com/cube-studio/tf2.3_keras_train:latest",
+        "image_name":"ccr.ccs.tencentyun.com/cube-studio/tf_distributed_train_k8s:20221010",
         "image_describe":"tf分布式",
         "job_template_name":"tfjob",
         "job_template_describe":"tf分布式",
