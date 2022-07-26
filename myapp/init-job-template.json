@@ -572,7 +572,7 @@
         "job_template_env":"",
         "job_template_expand":{
             "index":2,
-            "help_url":"https://github.com/tencentmusic/cube-studio/tree/master/job-template/job/xgb"
+            "help_url":"https://github.com/tencentmusic/cube-studio/tree/master/job-template/job/xgb_train_and_predict"
         },
         "job_template_args":{
             "训练":{

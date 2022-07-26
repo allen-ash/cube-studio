@@ -623,7 +623,8 @@ class Pipeline_ModelView_Base():
     cols_width={
         "id":{"type": "ellip2", "width": 100},
         "project": {"type": "ellip2", "width": 200},
-        "pipeline_url":{"type": "ellip2", "width": 500}
+        "pipeline_url":{"type": "ellip2", "width": 500},
+        "modified": {"type": "ellip2", "width": 150}
     }
     add_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','expired_limit','parallelism','global_env','alert_status','alert_user','parameter']
     show_columns = ['project','name','describe','schedule_type','cron_time','depends_on_past','max_active_runs','expired_limit','parallelism','global_env','dag_json','pipeline_file','pipeline_argo_id','version_id','run_id','created_by','changed_by','created_on','changed_on','expand','parameter']

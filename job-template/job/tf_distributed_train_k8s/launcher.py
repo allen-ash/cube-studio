@@ -40,8 +40,7 @@ KFJ_TASK_VOLUME_MOUNT = os.getenv('KFJ_TASK_VOLUME_MOUNT', '')
 KFJ_TASK_RESOURCE_CPU = os.getenv('KFJ_TASK_RESOURCE_CPU', '')
 KFJ_TASK_RESOURCE_MEMORY = os.getenv('KFJ_TASK_RESOURCE_MEMORY', '')
 NUM_WORKER = 3
-HEADER_NAME = os.getenv('RAY_HOST', '')
-WORKER_NAME = HEADER_NAME.replace('header', 'worker')
+
 INIT_FILE=''
 
 crd_info = {
@@ -92,9 +91,6 @@ def run_shell(shell):
             break
 
     return cmd.returncode
-
-
-
 
 
 
@@ -211,7 +207,7 @@ def make_tfjob(name,num_workers,image,working_dir,command):
     }
 
 
-    if GPU_TYPE=='NVIDIA' and GPU_RESOURCE:
+    if GPU_RESOURCE:
         pod_spec['template']['spec']['containers'][0]['resources']['requests']['nvidia.com/gpu'] = GPU_RESOURCE.split(',')[0]
         pod_spec['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = GPU_RESOURCE.split(',')[0]
 
