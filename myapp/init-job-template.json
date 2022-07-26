@@ -1299,7 +1299,7 @@
                     "require": 1,
                     "choice": [],
                     "range": "",
-                    "default": "python demo.py",
+                    "default": "python /mnt/admin/demo.py",
                     "placeholder": "",
                     "describe": "训练启动命令",
                     "editable": 1,

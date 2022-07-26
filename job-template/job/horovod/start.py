@@ -41,7 +41,7 @@ KFJ_TASK_RESOURCE_MEMORY = os.getenv('KFJ_TASK_RESOURCE_MEMORY', '')
 NUM_WORKER = 3
 COMMAND=''
 WORK_IMAGES='csighub.tencentyun.com/tme-kubeflow/horovod:cpu-20210401'
-
+WORKIMG_DIR ='/mnt/admin'
 
 k8s_volumes, k8s_volume_mounts = k8s_client.get_volume_mounts(KFJ_TASK_VOLUME_MOUNT,KFJ_CREATOR)
 
@@ -118,6 +118,7 @@ def make_mpijob(name):
                                 {
                                     "image": WORK_IMAGES,
                                     "name": "mpi-launcher",
+                                    "workingDir":WORKIMG_DIR,
                                     "command": [
                                         "mpirun"
                                     ],
@@ -183,11 +184,6 @@ def make_mpijob(name):
                         },
                         "spec": {
                             "volumes": k8s_volumes,
-                            "imagePullSecrets": [
-                                {
-                                    "name": "hubsecret"
-                                }
-                            ],
                             "affinity": {
                                 "nodeAffinity": {
                                     "requiredDuringSchedulingIgnoredDuringExecution": {
@@ -227,6 +223,7 @@ def make_mpijob(name):
                                 {
                                     "image": WORK_IMAGES,
                                     "name": "mpi-worker",
+                                    "workingDir": WORKIMG_DIR,
                                     "env": [
                                         {
                                             "name": "MY_CPU_REQUEST",
@@ -349,12 +346,13 @@ if __name__ == '__main__':
     parser.add_argument('--num_worker', type=int, default=2, help='并行worker的数目 (default: 2)')
     parser.add_argument('--command', type=str, default='python /horovod/examples/tensorflow2/tensorflow2_mnist.py', help='启动命令')
     parser.add_argument('--work_images', type=str, default='ccr.ccs.tencentyun.com/cube-studio/horovod:20210401', help='worker镜像')
-
+    parser.add_argument('--work_dir', type=str, default='/mnt/admin',help='工作目录')
     args = parser.parse_args()
     print(args)
     NUM_WORKER = args.num_worker
     COMMAND = args.command
     WORK_IMAGES = args.work_images
+    WORKIMG_DIR = args.work_dir
 
     main()
 
