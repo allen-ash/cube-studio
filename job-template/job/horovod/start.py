@@ -281,7 +281,7 @@ def watch_pod_log(name,namespace,container='main'):
     print('end follow log')
 
 
-# @pysnooper.snoop(watch_explode=('mpijob_json',))
+@pysnooper.snoop(watch_explode=())
 def main():
     k8s_client = K8s()
 

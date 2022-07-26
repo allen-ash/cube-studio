@@ -1565,6 +1565,7 @@ class K8s():
         """
         try:
             # stream pod log
+            print("begin listen pod %s log"%(name,))
             streams = self.v1.read_namespaced_pod_log(
                 name,
                 namespace,
