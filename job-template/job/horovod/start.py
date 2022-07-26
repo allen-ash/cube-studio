@@ -322,9 +322,14 @@ def main():
         #                           namespace=KFJ_NAMESPACE,
         #                           labels={"run-id": KFJ_RUN_ID})
         print(crd)
-        if crd['status']=='Succeeded':
-            exit(0)
-        else:
+        try:
+            status = crd['status_more'].get('conditions',[])[-1].get('type','')
+            if status=='Succeeded':
+                exit(0)
+            else:
+                exit(1)
+        except Exception as e:
+            print(e)
             exit(1)
     else:
         print('cluster fail build')
