@@ -96,7 +96,7 @@ class Notebook_ModelView_Base():
     base_filters = [["id", Notebook_Filter, lambda: []]]  # 设置权限过滤器
     order_columns = ['id']
     search_columns = ['created_by']
-    add_columns = ['project','name','describe','images','working_dir','volume_mount','resource_memory','resource_cpu']
+    add_columns = ['project','name','describe','images','working_dir','volume_mount','resource_memory','resource_cpu','resource_gpu']
     list_columns = ['project','ide_type','name_url','describe','resource','status','renew','reset']
     cols_width={
         "project":{"type": "ellip2", "width": 200},

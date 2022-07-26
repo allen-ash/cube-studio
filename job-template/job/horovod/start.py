@@ -304,8 +304,8 @@ def main():
         namespace=KFJ_NAMESPACE,
         body=mpijob_json
     )
-    # 等待创建完成
-    time.sleep(200)
+    # 等待创建完成，拉取镜像可能比较耗时
+    time.sleep(100)
 
     pods = k8s_client.get_pods(namespace=KFJ_NAMESPACE,labels={"component": job_name,"mpi-role":"Launcher"})
     if pods:
