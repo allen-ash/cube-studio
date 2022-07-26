@@ -1533,7 +1533,7 @@ class K8s():
 
 
     # 实时跟踪指定pod日志，直到pod结束
-    def watch_pod_log(self, name,namespace, tail_lines=100):
+    def get_pod_log_stream(self, name,namespace, tail_lines=100):
         """
         获取pod的日志
         :param tail_lines: # 显示最后多少行
@@ -1560,15 +1560,19 @@ class K8s():
             print("Get Log Fail: {0}".format(str(e)))
             raise e
 
-
-
-    def watch_tfjob_log(self,name,namespace,):
+    def watch_pod_log(self,name,namespace):
         print('begin follow log')
-        w = watch.Watch()
-        for event in w.stream(self.v1.read_namespaced_pod_log, name=name, namespace=namespace):
-            print(event)
+        logs = self.v1.read_namespaced_pod_log(
+            name=name,
+            namespace=namespace,
+            follow=True,
+            _preload_content=False,
+        )
+        for line in logs:
+            print(str(line,'utf-8'))
 
         print('end follow log')
+
 
 
     def get_uesd_gpu(self,namespaces):

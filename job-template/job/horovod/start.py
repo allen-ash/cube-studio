@@ -323,7 +323,7 @@ def main():
         #                           labels={"run-id": KFJ_RUN_ID})
         print(crd)
         try:
-            status = crd['status_more'].get('conditions',[])[-1].get('type','')
+            status = json.loads(crd['status_more']).get('conditions',[])[-1].get('type','')
             if status=='Succeeded':
                 exit(0)
             else:

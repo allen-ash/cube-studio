@@ -596,7 +596,7 @@ class Myapp(BaseMyappView):
             # tail_lines = request.values.get("tail_lines", 1000)
 
             try:
-                resp = Response(stream_with_context(k8s.watch_pod_log(pod_name,namespace, int(lines))), mimetype="text/plain")
+                resp = Response(stream_with_context(k8s.get_pod_log_stream(pod_name,namespace, int(lines))), mimetype="text/plain")
                 return resp
 
             except Exception as e:
