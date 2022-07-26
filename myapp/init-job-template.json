@@ -1216,7 +1216,7 @@
                     "choice":[
                     ],
                     "range":"",
-                    "default":"python demo.py",
+                    "default":"pip install tensorboardX torch torchvision --no-cache-dir && python demo.py",
                     "placeholder":"启动命令，例如 python3 xxx.py",
                     "describe":"启动命令，例如 python3 xxx.py",
                     "editable":1,
