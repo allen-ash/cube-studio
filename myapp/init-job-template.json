@@ -1179,7 +1179,6 @@
                     "label":"worker镜像，直接运行你代码的环境镜像",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"",
                     "default":"ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda10.1-cudnn7-python3.6",
@@ -1215,10 +1214,9 @@
                     "label":"启动命令，例如 python3 xxx.py",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"",
-                    "default":"",
+                    "default":"python demo.py",
                     "placeholder":"启动命令，例如 python3 xxx.py",
                     "describe":"启动命令，例如 python3 xxx.py",
                     "editable":1,
@@ -1264,34 +1262,6 @@
         },
         "job_template_args":{
             "参数": {
-                "--num_worker": {
-                    "type": "str",
-                    "item_type": "str",
-                    "label": "分布式worker的数目",
-                    "require": 1,
-                    "choice": [],
-                    "range": "",
-                    "default": 2,
-                    "placeholder": "",
-                    "describe": "分布式worker的数目",
-                    "editable": 1,
-                    "condition": "",
-                    "sub_args": {}
-                },
-                "--command": {
-                    "type": "str",
-                    "item_type": "str",
-                    "label": "训练启动命令",
-                    "require": 1,
-                    "choice": [],
-                    "range": "",
-                    "default": "python /horovod/examples/tensorflow2/tensorflow2_mnist.py",
-                    "placeholder": "",
-                    "describe": "训练启动命令",
-                    "editable": 1,
-                    "condition": "",
-                    "sub_args": {}
-                },
                 "--work_images": {
                     "type": "str",
                     "item_type": "str",
@@ -1302,6 +1272,50 @@
                     "default": "ccr.ccs.tencentyun.com/cube-studio/horovod:20210401",
                     "placeholder": "",
                     "describe": "worker的运行镜像",
+                    "editable": 1,
+                    "condition": "",
+                    "sub_args": {}
+                },
+                "--working_dir":{
+                    "type":"str",
+                    "item_type":"str",
+                    "label":"命令的启动目录",
+                    "require":1,
+                    "choice":[
+                    ],
+                    "range":"",
+                    "default":"/mnt/xxx/horovod/",
+                    "placeholder":"",
+                    "describe":"命令的启动目录",
+                    "editable":1,
+                    "condition":"",
+                    "sub_args":{
+                    }
+                },
+                 "--command": {
+                    "type": "str",
+                    "item_type": "str",
+                    "label": "训练启动命令",
+                    "require": 1,
+                    "choice": [],
+                    "range": "",
+                    "default": "python demo.py",
+                    "placeholder": "",
+                    "describe": "训练启动命令",
+                    "editable": 1,
+                    "condition": "",
+                    "sub_args": {}
+                },
+                "--num_worker": {
+                    "type": "str",
+                    "item_type": "str",
+                    "label": "分布式worker的数目",
+                    "require": 1,
+                    "choice": [],
+                    "range": "",
+                    "default": 2,
+                    "placeholder": "",
+                    "describe": "分布式worker的数目",
                     "editable": 1,
                     "condition": "",
                     "sub_args": {}
