@@ -305,7 +305,15 @@ def main():
     if pods:
         pod=pods[0]
         print('begin listen mpijob launcher pod %s' % pod['name'])
-        k8s_client.watch_pod_log(name=pod['name'],namespace=KFJ_NAMESPACE)  # 阻塞的，直到pod结束
+        from kubernetes import client,watch
+        v1 = client.CoreV1Api()
+        w = watch.Watch()
+        for e in w.stream(v1.read_namespaced_pod_log, name=pod['name'], namespace=KFJ_NAMESPACE):
+            print(e)
+
+        # k8s_client.watch_pod_log(name=pod['name'],namespace=KFJ_NAMESPACE)  # 阻塞的，直到pod结束
+
+        time.sleep(10) # 等待crd状态更新结束
         crd = k8s_client.get_one_crd(
             group=CRD_INFO['group'],
             version=CRD_INFO['version'],
@@ -313,6 +321,7 @@ def main():
             namespace=KFJ_NAMESPACE,
             name=job_name
         )
+
         # print('begin delete mpijob %s' % KFJ_TASK_NAME)
         # # 删除旧的mpi
         # if KFJ_RUN_ID:
