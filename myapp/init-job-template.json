@@ -1265,7 +1265,7 @@
                 "--work_images": {
                     "type": "str",
                     "item_type": "str",
-                    "label": "worker的运行镜像",
+                    "label": "worker的运行镜像，直接运行你代码的环境镜像 <a target='_blank' href='https://github.com/tencentmusic/cube-studio/tree/master/images'>基础镜像</a>",
                     "require": 1,
                     "choice": [],
                     "range": "",

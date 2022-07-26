@@ -346,13 +346,13 @@ if __name__ == '__main__':
     parser.add_argument('--num_worker', type=int, default=2, help='并行worker的数目 (default: 2)')
     parser.add_argument('--command', type=str, default='python /horovod/examples/tensorflow2/tensorflow2_mnist.py', help='启动命令')
     parser.add_argument('--work_images', type=str, default='ccr.ccs.tencentyun.com/cube-studio/horovod:20210401', help='worker镜像')
-    parser.add_argument('--work_dir', type=str, default='/mnt/admin',help='工作目录')
+    parser.add_argument('--working_dir', type=str, default='/mnt/admin',help='工作目录')
     args = parser.parse_args()
     print(args)
     NUM_WORKER = args.num_worker
     COMMAND = args.command
     WORK_IMAGES = args.work_images
-    WORKIMG_DIR = args.work_dir
+    WORKIMG_DIR = args.working_dir
 
     main()
 

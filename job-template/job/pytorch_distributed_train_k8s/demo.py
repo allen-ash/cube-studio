@@ -15,6 +15,7 @@ import pysnooper
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
 
 
+# 可以先下载数据到data目录
 # class MyMNIST(datasets.MNIST):
 #     resources = [
 #         ("https://docker-76009.sz.gfp.tencent-cloud.com/kubeflow/pytorch/example/data/train-images-idx3-ubyte.gz",
@@ -143,7 +144,7 @@ def main():
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     print('bengin load train data %s' % str(datetime.datetime.now()))
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
+        datasets.MNIST('data', train=True, download=True,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
@@ -151,7 +152,7 @@ def main():
         batch_size=args.batch_size, shuffle=True, **kwargs)
     print('bengin load test data %s' % str(datetime.datetime.now()))
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
+        datasets.MNIST('data', train=False, transform=transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
         ])),
