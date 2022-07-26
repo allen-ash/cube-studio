@@ -77,7 +77,6 @@ TASK_RESOURCE_GPU=0
 
 启动脚本
 ```
-pip install 
 python demo.py
 ```
-示例代码 [demo.py](https://github.com/kubeflow/training-operator/blob/master/examples/tensorflow/dist-mnist/dist_mnist.py)
+示例代码 [demo.py](https://github.com/kubeflow/training-operator/blob/master/examples/tensorflow/mnist_with_summaries/mnist_with_summaries.py)

@@ -183,7 +183,7 @@ def make_tfjob(name,num_workers,image,working_dir,command):
                 },
                 "containers": [
                     {
-                        "name": "tfjob",
+                        "name": "tensorflow",  # 容器的名称必须是tensorflow
                         "image": image if image else KFJ_TASK_IMAGES,
                         "imagePullPolicy": "Always",
                         "workingDir":working_dir,
