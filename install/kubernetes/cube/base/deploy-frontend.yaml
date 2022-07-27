@@ -23,6 +23,9 @@ data:
             root   /data/web;
             index  index.html index.htm;
             try_files $uri $uri/ /frontend/index.html;
+            if ($request_filename ~* .*\.html$) {
+              add_header Cache-Control "no-cache, no-store";
+            }
         }
 
         location / {
