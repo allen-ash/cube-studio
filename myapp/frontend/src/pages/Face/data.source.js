@@ -18,7 +18,7 @@ export const Banner50DataSource = {
   childWrapper: {
     className: 'banner5-title-wrapper',
     children: [
-      { name: 'title', children: '星云数据平台', className: 'banner5-title' },
+      { name: 'title', children: 'cube数据平台', className: 'banner5-title' },
       {
         name: 'explain',
         className: 'banner5-explain',

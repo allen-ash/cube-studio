@@ -13,7 +13,7 @@ export default function Index() {
                 <div className="wave-bg"><WaveComponent /></div>
 
                 {/* <div className="dec-rect">
-                    <div className="dec-rect-title">星云数据平台</div>
+                    <div className="dec-rect-title">cube数据平台</div>
                     <div className="dec-rect-content">数据资产服务旗下有星画，Superset，Swallow，等多款数据产品</div>
                 </div>
                 <div>
@@ -45,7 +45,7 @@ export default function Index() {
                             <div>
                                 <img src={require('../../images/logoStar.svg').default} alt="" />
                             </div>
-                            <div className="dec-maintext">星云数据平台</div>
+                            <div className="dec-maintext">cube数据平台</div>
                             <div className="fs20">
                                 TME 一站式集团数据融合平台
                         </div>

@@ -38,7 +38,7 @@ class Banner extends React.PureComponent {
               <div style={{ marginBottom: -16 }}>
                 <img style={{ height: 100 }} src={require('../../images/logoStar.svg').default} />
               </div>
-              <h1 name="title" className="banner5-title mb16" style={{ letterSpacing: 6 }}>星云数据平台 </h1>
+              <h1 name="title" className="banner5-title mb16" style={{ letterSpacing: 6 }}>cube数据平台 </h1>
               {/* <div name="explain" className="banner5-explain"><img style={{ height: 36 }} src={require('../../images/logoStar.svg').default} /></div> */}
               <div name="content" className="banner5-content">数据资产服务旗下有星画，Superset，Swallow，等多款数据产品</div>
               <div name="button" className="banner5-button-wrapper">

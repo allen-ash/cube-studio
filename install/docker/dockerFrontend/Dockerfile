@@ -1,6 +1,6 @@
 # docker build -t ccr.ccs.tencentyun.com/cube-studio/kubeflow-dashboard-frontend:2022.08.01 -f install/docker/dockerFrontend/Dockerfile .
 
-FROM mirrors.tencent.com/tmedi/nginx
+FROM nginx
 
 MAINTAINER star-frontend
 

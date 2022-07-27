@@ -185,7 +185,7 @@ export const routerConfigPlus: IRouterConfigPlusItem[] = [
     },
     {
         path: '/showOutLink',
-        title: '星云链接',
+        title: 'cube链接',
         element: lazy2Compont(() => import("./pages/IframeTemplate") as any)
     },
     {

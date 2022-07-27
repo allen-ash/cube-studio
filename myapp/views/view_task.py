@@ -86,7 +86,25 @@ class Task_ModelView_Base():
     datamodel = SQLAInterface(Task)
     check_redirect_list_url = '/pipeline_modelview/edit/'
     help_url = conf.get('HELP_URL', {}).get(datamodel.obj.__tablename__, '') if datamodel else ''
-    list_columns = ['name','label','job_template_url','volume_mount','debug','run','clear','log']
+    list_columns =['name', 'label','pipeline', 'job_template','volume_mount','resource_memory','resource_cpu','resource_gpu','timeout','retry','created_on','changed_on','monitoring','expand']
+    # list_columns = ['name','label','job_template_url','volume_mount','debug','run','clear','log']
+    cols_width={
+        "name":{"type": "ellip2", "width": 300},
+        "label":{"type": "ellip2", "width": 300},
+        "pipeline": {"type": "ellip2", "width": 300},
+        "job_template":{"type": "ellip2", "width": 300},
+        "volume_mount":{"type": "ellip2", "width": 600},
+        "args":{"type": "ellip2", "width": 400},
+        "resource_memory": {"type": "ellip2", "width": 100},
+        "resource_cpu": {"type": "ellip2", "width": 100},
+        "resource_gpu": {"type": "ellip2", "width": 100},
+        "timeout": {"type": "ellip2", "width": 100},
+        "retry": {"type": "ellip2", "width": 100},
+        "created_on": {"type": "ellip2", "width": 300},
+        "changed_on": {"type": "ellip2", "width": 300},
+        "monitoring": {"type": "ellip2", "width": 300},
+        "expand": {"type": "ellip2", "width": 300},
+    }
     show_columns = ['name', 'label','pipeline', 'job_template','volume_mount','command','overwrite_entrypoint','working_dir', 'args_html','resource_memory','resource_cpu','resource_gpu','timeout','retry','created_by','changed_by','created_on','changed_on','monitoring_html']
     add_columns = ['job_template', 'name', 'label', 'pipeline', 'volume_mount','command','working_dir']
     edit_columns = add_columns
@@ -140,7 +158,7 @@ class Task_ModelView_Base():
         "command":StringField(
             label = _(datamodel.obj.lab('command')),
             description='启动命令',
-            widget=MyBS3TextAreaFieldWidget(rows=3)
+            widget=BS3TextFieldWidget()
         ),
         "overwrite_entrypoint":BooleanField(
             label = _(datamodel.obj.lab('overwrite_entrypoint')),
@@ -727,7 +745,6 @@ class Task_ModelView_Api(Task_ModelView_Base,MyappModelRestApi):
     datamodel = SQLAInterface(Task)
     route_base = '/task_modelview/api'
     # list_columns = ['name','label','job_template_url','volume_mount','debug']
-    list_columns =['name', 'label','pipeline', 'job_template','volume_mount','node_selector','command','overwrite_entrypoint','working_dir', 'args','resource_memory','resource_cpu','resource_gpu','timeout','retry','created_by','changed_by','created_on','changed_on','monitoring','expand']
     add_columns = ['name','label','job_template','pipeline','working_dir','command','args','volume_mount','node_selector','resource_memory','resource_cpu','resource_gpu','timeout','retry','expand']
     edit_columns = add_columns
     show_columns = ['name', 'label','pipeline', 'job_template','volume_mount','node_selector','command','overwrite_entrypoint','working_dir', 'args','resource_memory','resource_cpu','resource_gpu','timeout','retry','created_by','changed_by','created_on','changed_on','monitoring','expand']

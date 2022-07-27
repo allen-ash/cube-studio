@@ -139,7 +139,7 @@ export default function MainServer() {
                     </div>
                     <div className="logo-center ta-c">
                         <img src={require('../../images/loadingStar.svg').default} />
-                        {/* <div className="pt16 fs20"><strong>星云数据平台</strong></div> */}
+                        {/* <div className="pt16 fs20"><strong>cube数据平台</strong></div> */}
                     </div>
 
                 </div>

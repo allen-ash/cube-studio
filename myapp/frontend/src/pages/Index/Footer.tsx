@@ -11,7 +11,7 @@ export default function Footer() {
             <div className="mr64">
               <div className="pb16">
                 <div className="pb16">
-                  <span>星云：</span>
+                  <span>cube：</span>
                   <a href="wxwork://message?username=zeluswu" target="_blank" className="pr8 c-text-w"><img style={{ width: 16 }} className="mr8" src={require('../../images/rtxIcon.png')} alt="" />zeluswu</a>
                   <a href="wxwork://message?username=pengluan" target="_blank" className="pr8 c-text-w"><img style={{ width: 16 }} className="mr8" src={require('../../images/rtxIcon.png')} alt="" />pengluan</a>
                 </div>
