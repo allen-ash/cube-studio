@@ -93,7 +93,7 @@ class Training_Model_ModelView_Base():
     base_order = ('changed_on', 'desc')
     order_columns = ['id']
     list_columns = ['project_url','name','version','pipeline_url','creator','modified','deploy']
-    add_columns = ['project','pipeline','name','version','describe','path','framework','run_id','run_time','metrics','md5','api_type']
+    add_columns = ['project','name','version','describe','path','framework','run_id','run_time','metrics','md5','api_type','pipeline_id']
     edit_columns = add_columns
     add_form_query_rel_fields = {
         "project": [["name", Project_Join_Filter, 'org']]
@@ -110,7 +110,8 @@ class Training_Model_ModelView_Base():
     spec_label_columns = {
         "path": "模型文件",
         "framework":"算法框架",
-        "api_type":"推理框架"
+        "api_type":"推理框架",
+        "pipeline_id":"任务流id"
     }
 
     label_title = '模型'
@@ -128,15 +129,21 @@ class Training_Model_ModelView_Base():
     service_type_choices= [x.replace('_','-') for x in ['tfserving','torch-server','onnxruntime','triton-server']]
 
     add_form_extra_fields={
-        "path": FileField(
+        "path": StringField(
             _('模型文件地址'),
             default='/mnt/admin/xx/saved_model/',
             description=_(path_describe),
             validators=[DataRequired()]
         ),
-        "describe": FileField(
+        "describe": StringField(
             _(datamodel.obj.lab('describe')),
             description=_('模型描述'),
+            validators=[DataRequired()]
+        ),
+        "pipeline_id": StringField(
+            _(datamodel.obj.lab('pipeline_id')),
+            description=_('任务流的id，0表示非任务流产生模型'),
+            default='0',
             validators=[DataRequired()]
         ),
         "version": StringField(
@@ -188,7 +195,7 @@ class Training_Model_ModelView_Base():
     #     )
 
 
-    @pysnooper.snoop(watch_explode=('item'))
+    # @pysnooper.snoop(watch_explode=('item'))
     def pre_add(self,item):
         if not item.run_id:
             item.run_id='random_run_id_'+uuid.uuid4().hex[:32]

@@ -360,15 +360,6 @@ class InferenceService_ModelView_base():
                 widget=BS3TextFieldWidget(),
                 validators=[DataRequired()]
             )
-            self.add_form_extra_fields['model_type'] = SelectField(
-                _('模型类型'),
-                default=service.model_type if service else 'image_classifier',
-                description='模型的功能类型',
-                widget=Select2Widget(),
-                choices=[[x, x] for x in ["image_classifier","image_segmenter","object_detector","text_classifier"]],
-                validators=[DataRequired()]
-            )
-            # model_columns.append('model_type')
 
 
         if service_type=='onnxruntime':
@@ -618,6 +609,11 @@ instance_group [
     # @pysnooper.snoop(watch_explode=('item'))
     def use_expand(self, item):
 
+        item.ports = conf.get('INFERNENCE_PORTS',{}).get(item.service_type,item.ports)
+        item.env = '\n'.join(conf.get('INFERNENCE_ENV', {}).get(item.service_type, item.env.split('\n') if item.env else []))
+        item.metrics = conf.get('INFERNENCE_METRICS', {}).get(item.service_type, item.metrics)
+        item.health = conf.get('INFERNENCE_HEALTH', {}).get(item.service_type, item.health)
+
         # 先存储特定参数到expand
         expand = json.loads(item.expand) if item.expand else {}
         print(self.src_item_json)
@@ -628,7 +624,7 @@ instance_group [
         if 'http:' in item.model_path or 'https:' in item.model_path:
             model_file = item.model_path[item.model_path.rindex('/')+1:]
             model_path = model_file
-            download_command = 'wget -O %s && '%item.model_path
+            download_command = 'wget %s && '%item.model_path
             if '.zip' in item.model_path:
                 download_command+='unzip -O %s && '%model_file
                 model_path = model_file.replace('.zip', '').replace('.tar.gz', '')  # 这就要求压缩文件和目录同名，并且下面直接就是目录。其他格式的文件不能压缩
@@ -695,12 +691,16 @@ instance_group [
         item.expand = json.dumps(expand,indent=4,ensure_ascii=False)
 
 
+
     # @pysnooper.snoop()
     def pre_add(self, item):
 
         if not item.volume_mount:
             item.volume_mount=item.project.volume_mount
         self.use_expand(item)
+
+        if ('http:' in item.model_path or 'https:' in item.model_path) and ('.zip' in item.model_path or '.tar.gz' in item.model_path):
+            flash('检测到模型地址为网络压缩文件，需压缩文件名和解压后文件夹名相同','warning')
 
     def delete_old_service(self,service_name,cluster):
         from myapp.utils.py.py_k8s import K8s
@@ -725,6 +725,8 @@ instance_group [
         if not item.volume_mount:
             item.volume_mount=item.project.volume_mount
         item.name = item.name.replace("_","-")
+        if ('http:' in item.model_path or 'https:' in item.model_path) and ('.zip' in item.model_path or '.tar.gz' in item.model_path):
+            flash('检测到模型地址为网络压缩文件，需压缩文件名和解压后文件夹名相同','warning')
 
         # if ('http://' in item.model_path or 'https://' in item.model_path) and item.model_path!=self.src_item_json.get('model_path',''):
         #     # self.download_model(item)

@@ -45,10 +45,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     project = relationship(
         Project, foreign_keys=[project_id]
     )
-    pipeline_id = Column(Integer, ForeignKey('pipeline.id'))  # 定义外键
-    pipeline = relationship(
-        Pipeline, foreign_keys=[pipeline_id]
-    )
+    pipeline_id = Column(Integer)  # 定义外键
     run_id = Column(String(100),nullable=False)   # 可能同一个pipeline产生多个模型
     run_time = Column(String(100))
     framework = Column(String(100))
@@ -61,10 +58,12 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
 
     @property
     def pipeline_url(self):
-        if self.pipeline:
-            return Markup(f'<a target=_blank href="/frontend/showOutLink?url=%2Fstatic%2Fappbuilder%2Fvison%2Findex.html%3Fpipeline_id%3D{self.pipeline_id}">{self.pipeline.describe}</a>')
-        else:
-            return Markup(f'未知')
+        if self.pipeline_id:
+            pipeline = db.session.query(Pipeline).filter_by(id=self.pipeline_id).first()
+            if pipeline:
+                return Markup(f'<a target=_blank href="/frontend/showOutLink?url=%2Fstatic%2Fappbuilder%2Fvison%2Findex.html%3Fpipeline_id%3D{self.pipeline_id}">{pipeline.describe}</a>')
+
+        return Markup(f'未知')
 
     @property
     def project_url(self):
