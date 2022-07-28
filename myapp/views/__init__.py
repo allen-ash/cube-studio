@@ -21,6 +21,7 @@ from . import view_metadata_metric
 from . import view_dimension
 from . import view_us_pipeline
 from . import view_sqllab
+from . import view_dataset
 from .log import views 
 from .log import api as log_api 
 

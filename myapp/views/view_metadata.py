@@ -123,7 +123,8 @@ class Metadata_table_ModelView_base():
     search_columns=['app','db','table','describe','field','warehouse_level','owner']
     spec_label_columns = {
         "table":"表名",
-        "metadata_column":"列信息"
+        "metadata_column":"列信息",
+        "field": "数据域",
     }
 
     edit_columns = add_columns

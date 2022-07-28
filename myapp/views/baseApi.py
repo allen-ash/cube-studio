@@ -280,6 +280,8 @@ class MyappModelRestApi(ModelRestApi):
     base_permissions=['can_add','can_show','can_edit','can_list','can_delete']
     cols_width={}
     import_data=False
+    pre_upload = None
+
     # def pre_list(self,**kargs):
     #     return
 
@@ -1185,80 +1187,93 @@ class MyappModelRestApi(ModelRestApi):
             }
             return self.response(200,**back)
 
-    #
-    # @expose("/upload/", methods=["POST"])
-    # # @pysnooper.snoop(watch_explode=('attr'))
-    # def upload(self):
-    #     csv_file = request.files.get('csv_file')  # FileStorage
-    #     # 图片保存至指定路径
-    #     i_path = csv_file.filename
-    #     if os.path.exists(i_path):
-    #         os.remove(i_path)
-    #     csv_file.save(i_path)
-    #     # 读取csv，读取header，按行处理
-    #     import csv
-    #     csv_reader = csv.reader(open(i_path, mode='r', encoding='utf-8-sig'))
-    #     header = None
-    #     result = []
-    #     for line in csv_reader:
-    #         if not header:
-    #             header = line
-    #             continue
-    #         # 判断header里面的字段是否在数据库都有
-    #         for col_name in header:
-    #             # attr = self.datamodel.obj
-    #             if not hasattr(self.datamodel.obj,col_name):
-    #                 flash('csv首行header与数据库字段不对应','warning')
-    #                 back = {
-    #                     "status":1,
-    #                     "result":[],
-    #                     "message":"csv首行header与数据库字段不对应"
-    #                 }
-    #                 return self.response(200,**back)
-    #         data = dict(zip(header, line))
-    #
-    #         try:
-    #             model = self.datamodel.obj(**data)
-    #             self.pre_add(model)
-    #             db.session.add(model)
-    #             self.post_add(model)
-    #             db.session.commit()
-    #             result.append('success')
-    #         except Exception as e:
-    #             print(e)
-    #             result.append('fail')
-    #
-    #     flash('成功导入%s行，失败导入%s行'%(len([x for x in result if x=='success']),len([x for x in result if x=='fail'])), 'warning')
-    #     back = {
-    #         "status": 0,
-    #         "result": result,
-    #         "message": "result为上传成功行，共成功%s"%len([x for x in result if x=='success'])
-    #     }
-    #     return self.response(200,**back)
-    #
-    #
-    # @action("muldelete", __("Delete"), __("Delete all Really?"), "fa-trash", single=False)
-    # # @pysnooper.snoop(watch_explode=('items'))
-    # def muldelete(self, items):
-    #     if not items:
-    #         abort(404)
-    #     success=[]
-    #     fail=[]
-    #     for item in items:
-    #         try:
-    #             self.pre_delete(item)
-    #             db.session.delete(item)
-    #             success.append(item.to_json())
-    #         except Exception as e:
-    #             flash(str(e), "danger")
-    #             fail.append(item.to_json())
-    #     db.session.commit()
-    #     return json.dumps(
-    #         {
-    #             "success":success,
-    #             "fail":fail
-    #         },indent=4,ensure_ascii=False
-    #     )
+
+
+    @expose("/upload/", methods=["POST"])
+    def upload(self):
+        csv_file = request.files.get('csv_file')  # FileStorage
+        # 文件保存至指定路径
+        i_path = csv_file.filename
+        if os.path.exists(i_path):
+            os.remove(i_path)
+        csv_file.save(i_path)
+        # 读取csv，读取header，按行处理
+        import csv
+        csv_reader = csv.reader(open(i_path, mode='r', encoding='utf-8-sig'))
+        header = None
+        result = []
+        for line in csv_reader:
+            if not header:
+                header = line
+                continue
+            # 判断header里面的字段是否在数据库都有
+            for col_name in header:
+                # attr = self.datamodel.obj
+                if not hasattr(self.datamodel.obj,col_name):
+                    flash('csv首行header与数据库字段不对应','warning')
+                    back = {
+                        "status":1,
+                        "result":[],
+                        "message":"csv首行header与数据库字段不对应"
+                    }
+                    return self.response(200,**back)
+
+            # 个数不对的去掉
+            if len(line)!=len(header):
+                continue
+
+            # 全是空值的去掉
+            ll = [l.strip() for l in line if l.strip()]
+            if not ll:
+                continue
+
+            data = dict(zip(header, line))
+
+            try:
+                if self.pre_upload:
+                    data = self.pre_upload(data)
+                model = self.datamodel.obj(**data)
+                self.pre_add(model)
+                db.session.add(model)
+                self.post_add(model)
+                db.session.commit()
+                result.append('success')
+            except Exception as e:
+                print(e)
+                result.append('fail')
+
+        flash('成功导入%s行，失败导入%s行'%(len([x for x in result if x=='success']),len([x for x in result if x=='fail'])), 'warning')
+        back = {
+            "status": 0,
+            "message": "result为上传成功行，共成功%s" % len([x for x in result if x == 'success']),
+            "result": result
+        }
+        return self.response(200,**back)
+
+
+
+    @action("muldelete", __("Delete"), __("Delete all Really?"), "fa-trash", single=False)
+    # @pysnooper.snoop(watch_explode=('items'))
+    def muldelete(self, items):
+        if not items:
+            abort(404)
+        success=[]
+        fail=[]
+        for item in items:
+            try:
+                self.pre_delete(item)
+                db.session.delete(item)
+                success.append(item.to_json())
+            except Exception as e:
+                flash(str(e), "danger")
+                fail.append(item.to_json())
+        db.session.commit()
+        return json.dumps(
+            {
+                "success":success,
+                "fail":fail
+            },indent=4,ensure_ascii=False
+        )
 
     """
     ------------------------------------------------

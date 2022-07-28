@@ -333,10 +333,10 @@ class InferenceService_ModelView_base():
         self.add_form_extra_fields['model_path'] = StringField(
             _('模型地址'),
             default=service.model_path if service else '',
-            description=Markup('tfserving：仅支持tf save_model的模型存储方式<br>'
-                               'torch-server：需保存完整模型信息，包括模型结构和模型参数，或者使用torch-model-archiver编译后的mar模型文件<br>'
+            description=Markup('tfserving：仅支持添加了服务签名的saved_model目录地址，例如 /xx/saved_model<br>'
+                               'torch-server：torch-model-archiver编译后的mar模型文件，需保存模型结构和模型参数<br>'
                                'onnxruntime：onnx模型文件的地址<br>'
-                               'triton-server：框架:地址,onnx:模型文件地址model.onnx，pytorch:torchscript模型文件地址model.pt，tf:模型目录地址saved_model，tensorrt:模型文件地址model.plan'),
+                               'triton-server：/xx/model.onnx，/xx/model.pt，/xx/saved_model，/xx/model.plan'),
             widget=BS3TextFieldWidget(),
             validators=[]
         )
@@ -346,7 +346,7 @@ class InferenceService_ModelView_base():
             self.add_form_extra_fields['model_path'] = StringField(
                 _('模型地址'),
                 default=service.model_path if service else '/mnt/.../saved_model',
-                description='仅支持tf save_model的模型存储方式',
+                description='仅支持添加了服务签名的save_model目录地址',
                 widget=BS3TextFieldWidget(),
                 validators=[DataRequired()]
             )
@@ -356,7 +356,7 @@ class InferenceService_ModelView_base():
             self.add_form_extra_fields['model_path'] = StringField(
                 _('模型地址'),
                 default=service.model_path if service else '/mnt/.../$model_name.mar',
-                description='需保存完整模型信息，包括模型结构和模型参数，或者使用torch-model-archiver编译后的mar模型文件',
+                description='torch-model-archiver编译后的mar模型文件，需保存模型结构和模型参数',
                 widget=BS3TextFieldWidget(),
                 validators=[DataRequired()]
             )
@@ -368,7 +368,7 @@ class InferenceService_ModelView_base():
                 choices=[[x, x] for x in ["image_classifier","image_segmenter","object_detector","text_classifier"]],
                 validators=[DataRequired()]
             )
-            model_columns.append('model_type')
+            # model_columns.append('model_type')
 
 
         if service_type=='onnxruntime':
@@ -389,7 +389,7 @@ class InferenceService_ModelView_base():
                 validators=[DataRequired()]
             )
 
-            input_demo='''
+        input_demo='''
 [
     {
         name: "input_name"
@@ -401,9 +401,9 @@ class InferenceService_ModelView_base():
         }
     }
 ]
-            '''
+        '''
 
-            output_demo ='''
+        output_demo ='''
 [
     {
         name: "output_name"
@@ -414,25 +414,25 @@ class InferenceService_ModelView_base():
         }
     }
 ]
-            '''
+        '''
 
-            self.add_form_extra_fields['model_input'] = StringField(
-                _('模型输入'),
-                default=service.model_input if service else input_demo,
-                description='目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
-                widget=MyBS3TextAreaFieldWidget(rows=5),
-                validators=[DataRequired()]
-            )
-            self.add_form_extra_fields['model_output'] = StringField(
-                _('模型输出'),
-                default=service.model_output if service else output_demo,
-                description='目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
-                widget=MyBS3TextAreaFieldWidget(rows=5),
-                validators=[DataRequired()]
-            )
+        self.add_form_extra_fields['model_input'] = StringField(
+            _('模型输入'),
+            default=service.model_input if service else input_demo.strip('\n'),
+            description='triton推理时使用，目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
+            widget=MyBS3TextAreaFieldWidget(rows=5),
+            validators=[]
+        )
+        self.add_form_extra_fields['model_output'] = StringField(
+            _('模型输出'),
+            default=service.model_output if service else output_demo.strip('\n'),
+            description='triton推理时使用，目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
+            widget=MyBS3TextAreaFieldWidget(rows=5),
+            validators=[]
+        )
 
-            model_columns.append('model_input')
-            model_columns.append('model_output')
+        model_columns.append('model_input')
+        model_columns.append('model_output')
 
 
 
@@ -622,13 +622,26 @@ instance_group [
         expand = json.loads(item.expand) if item.expand else {}
         print(self.src_item_json)
         model_version = item.model_version.replace('v','').replace('.','').replace(':','')
+        model_path = "/"+item.model_path.strip('/')
+        # 对网络地址先同一在命令中下载
+        download_command=''
+        if 'http:' in item.model_path or 'https:' in item.model_path:
+            model_file = item.model_path[item.model_path.rindex('/')+1:]
+            model_path = model_file
+            download_command = 'wget -O %s && '%item.model_path
+            if '.zip' in item.model_path:
+                download_command+='unzip -O %s && '%model_file
+                model_path = model_file.replace('.zip', '').replace('.tar.gz', '')  # 这就要求压缩文件和目录同名，并且下面直接就是目录。其他格式的文件不能压缩
+            if '.tar.gz' in item.model_path:
+                download_command += 'tar -zxvf %s && '%model_file
+                model_path = model_file.replace('.zip','').replace('.tar.gz','')  # 这就要求压缩文件和目录同名，并且下面直接就是目录。其他格式的文件不能压缩
 
         if item.service_type=='tfserving':
-            model_path=item.model_path.strip('/')
             des_model_path = "/models/%s/" % (item.model_name,)
             des_version_path = "/models/%s/%s/"%(item.model_name,model_version)
             if not item.id or not item.command:
-                item.command='mkdir -p %s && cp -r /%s/* %s  &&  /usr/bin/tf_serving_entrypoint.sh --model_config_file=/config/models.config --monitoring_config_file=/config/monitoring.config --platform_config_file=/config/platform.config'%(des_version_path,model_path,des_version_path)
+                item.command=download_command+'''mkdir -p %s && cp -r %s/* %s  &&  /usr/bin/tf_serving_entrypoint.sh --model_config_file=/config/models.config --monitoring_config_file=/config/monitoring.config --platform_config_file=/config/platform.config'''%(des_version_path,model_path,des_version_path)
+
             item.health='8501:/v1/models/%s/versions/%s/metadata'%(item.model_name,model_version)
 
             expand['models.config']=expand['models.config'] if expand.get('models.config','') else self.tfserving_model_config(item.model_name,model_version,des_model_path)
@@ -636,12 +649,12 @@ instance_group [
             expand['platform.config'] = expand['platform.config'] if expand.get('platform.config','') else self.tfserving_platform_config()
 
         if item.service_type=='torch-server':
-            if '.mar' not in item.model_path:
-                tar_command = 'torch-model-archiver --model-name %s --version %s --handler %s --serialized-file %s --export-path /models -f'%(item.model_name,model_version,item.transformer or item.model_type,item.model_path)
+            if '.mar' not in model_path:
+                tar_command = 'torch-model-archiver --model-name %s --version %s --handler %s --serialized-file %s --export-path /models -f'%(item.model_name,model_version,item.transformer or item.model_type,model_path)
             else:
-                tar_command='cp %s /models/'%item.model_path
+                tar_command='cp %s /models/'%model_path
             if not item.id or not item.command:
-                item.command='mkdir -p /models && cp /config/* /models/ && '+tar_command+' && torchserve --start --model-store /models --models %s=%s.mar --foreground --ts-config=/config/config.properties'%(item.model_name,item.model_name)
+                item.command=download_command+'mkdir -p /models && cp /config/* /models/ && '+tar_command+' && torchserve --start --model-store /models --models %s=%s.mar --foreground --ts-config=/config/config.properties'%(item.model_name,item.model_name)
             if not item.working_dir:
                 item.working_dir='/models'
             expand['config.properties'] = expand['config.properties'] if expand.get('config.properties','') else self.torch_config()
@@ -649,15 +662,20 @@ instance_group [
 
         if item.service_type=='triton-server':
             # 识别模型类型
-            model_type = item.model_path.split(":")[0]
-            model_path = item.model_path.split(":")[1]
+            model_type = 'tf'
+            if '.onnx' in model_path:
+                model_type='onnx'
+            if '.plan' in model_path:
+                model_type = 'tensorrt'
+            if '.pt' not in model_path:
+                model_type = 'pytorch'
 
             if not item.id or not item.command:
                 if model_type=='tf':
-                    item.command='mkdir -p /models/{model_name}/{model_version}/model.savedmodel && cp /config/* /models/{model_name}/ && cp -r /{model_path}/* /models/{model_name}/{model_version}/model.savedmodel && tritonserver --model-repository=/models --strict-model-config=true  --log-verbose=1'.format(model_path=model_path.strip('/'),model_name=item.model_name,model_version=model_version)
+                    item.command=download_command+'mkdir -p /models/{model_name}/{model_version}/model.savedmodel && cp /config/* /models/{model_name}/ && cp -r /{model_path}/* /models/{model_name}/{model_version}/model.savedmodel && tritonserver --model-repository=/models --strict-model-config=true  --log-verbose=1'.format(model_path=model_path.strip('/'),model_name=item.model_name,model_version=model_version)
                 else:
-                    model_file_ext = item.model_path.split(".")[-1]
-                    item.command='mkdir -p /models/{model_name}/{model_version}/ && cp /config/* /models/{model_name}/ && cp -r {model_path} /models/{model_name}/{model_version}/model.{model_file_ext} && tritonserver --model-repository=/models --strict-model-config=true  --log-verbose=1'.format(model_path=model_path,model_name=item.model_name,model_version=model_version,model_file_ext=model_file_ext)
+                    model_file_ext = model_path.split(".")[-1]
+                    item.command=download_command+'mkdir -p /models/{model_name}/{model_version}/ && cp /config/* /models/{model_name}/ && cp -r {model_path} /models/{model_name}/{model_version}/model.{model_file_ext} && tritonserver --model-repository=/models --strict-model-config=true  --log-verbose=1'.format(model_path=model_path,model_name=item.model_name,model_version=model_version,model_file_ext=model_file_ext)
 
             config_str = self.triton_config(item.model_name,item.model_input,item.model_output,model_type)
             old_config_str = json.loads(self.src_item_json['expand']).get('config.pbtxt','') if item.id else ''
@@ -671,10 +689,11 @@ instance_group [
 
         if item.service_type=='onnxruntime':
             if not item.id or not item.command:
-                item.command='./onnxruntime_server --log_level info --model_path  %s'%item.model_path
+                item.command=download_command+'./onnxruntime_server --log_level info --model_path  %s'%model_path
 
         item.name=item.service_type+"-"+item.model_name+"-"+model_version
         item.expand = json.dumps(expand,indent=4,ensure_ascii=False)
+
 
     # @pysnooper.snoop()
     def pre_add(self, item):
@@ -706,6 +725,12 @@ instance_group [
         if not item.volume_mount:
             item.volume_mount=item.project.volume_mount
         item.name = item.name.replace("_","-")
+
+        # if ('http://' in item.model_path or 'https://' in item.model_path) and item.model_path!=self.src_item_json.get('model_path',''):
+        #     # self.download_model(item)
+        #     if '.zip' not in item.model_path and '.tar.gz' not in item.model_path:
+        #         flash('未识别的模型网络地址','warning')
+
         # 修改了名称的话，要把之前的删掉
         self.use_expand(item)
 

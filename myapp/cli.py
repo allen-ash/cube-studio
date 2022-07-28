@@ -12,6 +12,7 @@ from myapp import app, appbuilder, db, security_manager
 from myapp.models.model_notebook import Notebook
 from myapp.models.model_team import Project,Project_User
 from myapp.models.model_job import Repository,Images,Job_Template,Pipeline,Task
+from myapp.models.model_dataset import Dataset
 from myapp.models.model_serving import Service,InferenceService
 conf = app.config
 import requests
@@ -178,7 +179,7 @@ def init():
 
 
     # 添加demo 服务
-    def create_service(project_name,service_name,service_describe,image_name,command,env,resource_mem='2G',resource_cpu='2',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt'):
+    def create_service(project_name,service_name,service_describe,image_name,command,env,resource_memory='2G',resource_cpu='2',resource_gpu='0',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt'):
         service = db.session.query(Service).filter_by(name=service_name).first()
         project = db.session.query(Project).filter_by(name=project_name).filter_by(type='org').first()
         if service is None and project:
@@ -191,6 +192,9 @@ def init():
                 service.project_id=project.id
                 service.images=image_name
                 service.command = command
+                service.resource_memory=resource_memory,
+                service.resource_cpu=resource_cpu,
+                service.resource_gpu=resource_gpu,
                 service.env='\n'.join([x.strip() for x in env.split('\n') if x.split()])
                 service.ports = ports
                 service.volume_mount=volume_mount
@@ -361,5 +365,51 @@ def init():
             create_pipeline(pipeline=pipeline,tasks=tasks)
     except Exception as e:
         print(e)
+
+
+
+
+
+    # 添加 demo 推理 服务
+    def create_dataset(name,field,label,status,describe,url,industry,source,source_type,file_type,research,storage_class,storage_size,download_url):
+        dataset = db.session.query(Dataset).filter_by(name=name).first()
+        if not dataset:
+            try:
+                dataset = Dataset()
+                dataset.name = name
+                dataset.field=field
+                dataset.label=label
+                dataset.status=status
+                dataset.describe=describe
+                dataset.url = url
+                dataset.source=source
+                dataset.industry=industry
+                dataset.source_type=source_type
+                dataset.file_type=file_type
+                dataset.research=research
+                dataset.storage_class=storage_class
+                dataset.storage_size = storage_size
+                dataset.download_url = download_url
+                dataset.owner = '*'
+                db.session.add(dataset)
+                db.session.commit()
+                print('add dataset %s' % name)
+            except Exception as e:
+                db.session.rollback()
+
+    try:
+        import csv
+        csv_reader = csv.reader(open('myapp/init-dataset.csv', mode='r', encoding='utf-8-sig'))
+        header = None
+        for line in csv_reader:
+            if not header:
+                header = line
+                continue
+            data = dict(zip(header, line))
+            create_dataset(**data)
+
+    except Exception as e:
+        print(e)
+
 
 

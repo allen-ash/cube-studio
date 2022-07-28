@@ -227,10 +227,9 @@ class Myapp(BaseMyappView):
                             {
                                 "name": 'label_data',
                                 "title": '数据集',
-                                "disable": True,
                                 "icon": '<svg t="1658320455412" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2287" width="200" height="200"><path d="M685.6 444l171.7 68.7-354.8 141.9-337.2-141.9 175-73.7-37.3-17-208.6 90.7 408.1 177.4 425.8-177.4-201.7-84-41 15.3z m0 230.7l171.7 68.7-354.8 141.9-337.2-141.9 175-73.7-37.4-17-208.5 90.7 408.1 177.4 425.8-177.4-201.7-84-41 15.3zM928.3 282L502.5 104.6 94.4 282l408.1 177.4L928.3 282z m-763 0l337.1-141.9L857.3 282 502.5 424 165.3 282z m586.1 17.8V282L503 388.5 254.5 282v17.7L503 406.2l248.4-106.4z" fill="" p-id="2288"></path></svg>',
                                 "menu_type": "api",
-                                "url": "/metadata_table_modelview/api/"
+                                "url": "/dataset_modelview/api/"
                             },
                             {
                                 "name": 'label_platform',

@@ -190,56 +190,10 @@ class Metadata_metric_ModelView_base():
     edit_form_extra_fields = add_form_extra_fields
     import_data=True
 
-    @expose("/upload/", methods=["POST"])
-    def upload(self):
-        csv_file = request.files.get('csv_file')  # FileStorage
-        # 文件保存至指定路径
-        i_path = csv_file.filename
-        if os.path.exists(i_path):
-            os.remove(i_path)
-        csv_file.save(i_path)
-        # 读取csv，读取header，按行处理
-        import csv
-        csv_reader = csv.reader(open(i_path, mode='r', encoding='utf-8-sig'))
-        header = None
-        result = []
-        for line in csv_reader:
-            if not header:
-                header = line
-                continue
-            # 判断header里面的字段是否在数据库都有
-            for col_name in header:
-                # attr = self.datamodel.obj
-                if not hasattr(self.datamodel.obj, col_name):
-                    flash('csv首行header与数据库字段不对应', 'warning')
-                    back = {
-                        "status": 1,
-                        "result": [],
-                        "message": "csv首行header与数据库字段不对应"
-                    }
-                    return self.response(400, **back)
-            data = dict(zip(header, line))
 
-            try:
-                data['public']=bool(int(data.get('public',1)))
-
-                model = self.datamodel.obj(**data)
-                self.pre_add(model)
-                db.session.add(model)
-                self.post_add(model)
-                db.session.commit()
-                result.append('success')
-            except Exception as e:
-                print(e)
-                result.append('fail')
-
-        flash('成功导入%s行，失败导入%s行' % (len([x for x in result if x == 'success']), len([x for x in result if x == 'fail'])), 'warning')
-        back = {
-            "status": 0,
-            "result": result,
-            "message": "result为上传成功行，共成功%s" % len([x for x in result if x == 'success'])
-        }
-        return self.response(200, **back)
+    def pre_upload(self,data):
+        data['public'] = bool(int(data.get('public', 1)))
+        return data
 
 
     # @action(
