@@ -427,7 +427,7 @@ def init():
 
 
     # 添加 demo 推理 服务
-    def create_inference(project_name,service_name,service_describe,image_name,command,env,model_name,model_version='',model_path='',service_type='serving',resource_memory='2G',resource_cpu='2',resource_gpu='0',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt',metrics='',health=''):
+    def create_inference(project_name,service_name,service_describe,image_name,command,env,model_name,workdir='',model_version='',model_path='',service_type='serving',resource_memory='2G',resource_cpu='2',resource_gpu='0',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt',metrics='',health=''):
         service = db.session.query(InferenceService).filter_by(name=service_name).first()
         project = db.session.query(Project).filter_by(name=project_name).filter_by(type='org').first()
         if service is None and project:
@@ -446,6 +446,7 @@ def init():
                 service.resource_memory=resource_memory
                 service.resource_cpu=resource_cpu
                 service.resource_gpu = resource_gpu
+                service.working_dir=workdir
                 service.command = command
                 service.env='\n'.join([x.strip() for x in env.split('\n') if x.split()])
                 service.ports = ports

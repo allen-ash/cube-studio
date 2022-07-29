@@ -3,9 +3,18 @@
         "project_name": "public",
         "name": "mnist",
         "version": "v2022.07.28.1",
-        "describe": "图像分类",
+        "describe": "mnist 图像分类",
         "path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/tf-mnist.tar.gz",
         "framework": "tf",
         "api_type": "tfserving"
+    },
+    "resnet50": {
+        "project_name": "public",
+        "name": "resnet50",
+        "version": "v2022.07.28.1",
+        "describe": "resnet50 图像分类",
+        "path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/resnet50.mar",
+        "framework": "pytorch",
+        "api_type": "torchserver"
     }
 }

@@ -3,7 +3,7 @@
         "project_name": "public",
         "service_name": "tfserving-mnist-202207281",
         "model_name": "mnist",
-        "service_describe": "图像分类",
+        "service_describe": "mnist 图像分类",
         "image_name": "ccr.ccs.tencentyun.com/cube-studio/tfserving:2.3.4",
         "model_version": "v2022.07.28.1",
         "model_path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/tf-mnist.tar.gz",
@@ -16,6 +16,25 @@
         "volume_mount": "kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives",
         "resource_memory": "2G",
         "resource_cpu": "2"
+    },
+    "resnet50": {
+        "project_name": "public",
+        "service_name": "torchserver-resnet50-202207281",
+        "model_name": "resnet50",
+        "service_describe": "resnet50 图像分类",
+        "image_name": "ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.3-cpu",
+        "model_version": "v2022.07.28.1",
+        "model_path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/resnet50.mar",
+        "service_type": "torch-server",
+        "env": "",
+        "ports": "8080,8081",
+        "metrics": "8082:/metrics",
+        "workdir": "/models",
+        "command": "wget https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/resnet50.mar && mkdir -p /models && cp /config/* /models/ && cp resnet50.mar /models/ && torchserve --start --model-store /models --models resnet50=resnet50.mar --foreground --ts-config=/config/config.properties",
+        "health": "8080:/ping",
+        "volume_mount": "kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives",
+        "resource_memory": "5G",
+        "resource_cpu": "5"
     }
 }
 
