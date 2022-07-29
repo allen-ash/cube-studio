@@ -712,7 +712,7 @@ HELP_URL={
     "images":"https://github.com/tencentmusic/cube-studio/tree/master/images",
     "notebook":"https://github.com/tencentmusic/cube-studio/tree/master/docs/example",
     "service":"https://github.com/tencentmusic/cube-studio/tree/master/docs/example",
-    "inferenceservice":"https://github.com/tencentmusic/cube-studio/tree/master/docs/example",
+    "inferenceservice":"https://github.com/tencentmusic/cube-studio/tree/master/images/serving",
     "run":"https://github.com/tencentmusic/cube-studio/tree/master/docs/example",
     "docker":"https://github.com/tencentmusic/cube-studio/tree/master/images"
 }
@@ -823,7 +823,7 @@ ALL_LINKS=[
 # 推理服务的各种配置
 TFSERVING_IMAGES=['ccr.ccs.tencentyun.com/cube-studio/tfserving:1.14.0','ccr.ccs.tencentyun.com/cube-studio/tfserving:1.14.0-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.0.0','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.0.0-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.1.4','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.1.4-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.2.3','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.2.3-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.3.4','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.3.4-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.4.3','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.4.3-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.5.2','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.5.2-gpu','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.6.0','ccr.ccs.tencentyun.com/cube-studio/tfserving:2.6.0-gpu']
 TRITONSERVER_IMAGES=['ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.12-py3','ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.09-py3']
-TORCHSERVER_IMAGES=['ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.0-cpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.0-gpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.4.2-cpu','ccr.ccs.tencentyun.com/cube-studio/torchserve:0.4.2-gpu']
+TORCHSERVER_IMAGES=['pytorch/torchserve:0.6.0-cpu','pytorch/torchserve:0.6.0-gpu','pytorch/torchserve:0.5.3-cpu','pytorch/torchserve:0.5.3-gpu','pytorch/torchserve:0.4.2-cpu','pytorch/torchserve:0.4.2-gpu']
 INFERNENCE_IMAGES={
     "tfserving":TFSERVING_IMAGES,
     'torch-server':TORCHSERVER_IMAGES,

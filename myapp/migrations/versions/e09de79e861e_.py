@@ -551,7 +551,6 @@ def upgrade():
     sa.Column('changed_by_fk', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['changed_by_fk'], ['ab_user.id'], ),
     sa.ForeignKeyConstraint(['created_by_fk'], ['ab_user.id'], ),
-    sa.ForeignKeyConstraint(['pipeline_id'], ['pipeline.id'], ),
     sa.ForeignKeyConstraint(['project_id'], ['project.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

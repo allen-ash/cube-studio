@@ -45,7 +45,7 @@ class Training_Model(Model,AuditMixinNullable,MyappModelBase):
     project = relationship(
         Project, foreign_keys=[project_id]
     )
-    pipeline_id = Column(Integer)  # 定义外键
+    pipeline_id = Column(Integer,default=0)  # 定义外键
     run_id = Column(String(100),nullable=False)   # 可能同一个pipeline产生多个模型
     run_time = Column(String(100))
     framework = Column(String(100))

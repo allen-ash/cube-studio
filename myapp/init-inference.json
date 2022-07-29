@@ -1,5 +1,22 @@
 {
-
+    "mnist": {
+        "project_name": "public",
+        "service_name": "tfserving-mnist-202207281",
+        "model_name": "mnist",
+        "service_describe": "图像分类",
+        "image_name": "ccr.ccs.tencentyun.com/cube-studio/tfserving:2.3.4",
+        "model_version": "v2022.07.28.1",
+        "model_path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/tf-mnist.tar.gz",
+        "service_type": "tfserving",
+        "env": "TF_CPP_VMODULE=http_server=1\nTZ=Asia/Shanghai",
+        "ports": "8501",
+        "metrics": "8501:/metrics",
+        "command": "wget https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/tf-mnist.tar.gz && tar -zxvf tf-mnist.tar.gz && mkdir -p /models/mnist/202207281/ && cp -r tf-mnist/* /models/mnist/202207281/ && /usr/bin/tf_serving_entrypoint.sh --model_config_file=/config/models.config --monitoring_config_file=/config/monitoring.config --platform_config_file=/config/platform.config",
+        "health": "8501:/v1/models/mnist/versions/202207281/metadata",
+        "volume_mount": "kubeflow-user-workspace(pvc):/mnt,kubeflow-archives(pvc):/archives",
+        "resource_memory": "2G",
+        "resource_cpu": "2"
+    }
 }
 
 

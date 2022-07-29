@@ -392,7 +392,7 @@ class InferenceService_ModelView_base():
         }
     }
 ]
-        '''
+'''
 
         output_demo ='''
 [
@@ -405,18 +405,18 @@ class InferenceService_ModelView_base():
         }
     }
 ]
-        '''
+'''
 
         self.add_form_extra_fields['model_input'] = StringField(
             _('模型输入'),
-            default=service.model_input if service else input_demo.strip('\n'),
+            default=service.model_input if service else input_demo.strip('\n').strip(' '),
             description='triton推理时使用，目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
             widget=MyBS3TextAreaFieldWidget(rows=5),
             validators=[]
         )
         self.add_form_extra_fields['model_output'] = StringField(
             _('模型输出'),
-            default=service.model_output if service else output_demo.strip('\n'),
+            default=service.model_output if service else output_demo.strip('\n').strip(' '),
             description='triton推理时使用，目前仅支持onnx/tensorrt/torch模型的triton gpu推理加速',
             widget=MyBS3TextAreaFieldWidget(rows=5),
             validators=[]
@@ -703,22 +703,24 @@ instance_group [
             flash('检测到模型地址为网络压缩文件，需压缩文件名和解压后文件夹名相同','warning')
 
     def delete_old_service(self,service_name,cluster):
-        from myapp.utils.py.py_k8s import K8s
-        k8s_client = K8s(cluster.get('KUBECONFIG',''))
-        service_namespace = conf.get('SERVICE_NAMESPACE')
-        kfserving_namespace = conf.get('KFSERVING_NAMESPACE')
-        for namespace in [service_namespace,kfserving_namespace]:
-            for name in [service_name,'debug-'+service_name,'test-'+service_name]:
-                service_external_name = (name + "-external").lower()[:60].strip('-')
-                k8s_client.delete_deployment(namespace=namespace, name=name)
-                k8s_client.delete_service(namespace=namespace, name=name)
-                k8s_client.delete_service(namespace=namespace, name=service_external_name)
-                k8s_client.delete_istio_ingress(namespace=namespace, name=name)
-                k8s_client.delete_hpa(namespace=namespace, name=name)
-                k8s_client.delete_configmap(namespace=namespace, name=name)
-                isvc_crd=conf.get('CRD_INFO')['inferenceservice']
-                k8s_client.delete_crd(isvc_crd['group'],isvc_crd['version'],isvc_crd['plural'],namespace=namespace,name=name)
-
+        try:
+            from myapp.utils.py.py_k8s import K8s
+            k8s_client = K8s(cluster.get('KUBECONFIG',''))
+            service_namespace = conf.get('SERVICE_NAMESPACE')
+            kfserving_namespace = conf.get('KFSERVING_NAMESPACE')
+            for namespace in [service_namespace,kfserving_namespace]:
+                for name in [service_name,'debug-'+service_name,'test-'+service_name]:
+                    service_external_name = (name + "-external").lower()[:60].strip('-')
+                    k8s_client.delete_deployment(namespace=namespace, name=name)
+                    k8s_client.delete_service(namespace=namespace, name=name)
+                    k8s_client.delete_service(namespace=namespace, name=service_external_name)
+                    k8s_client.delete_istio_ingress(namespace=namespace, name=name)
+                    k8s_client.delete_hpa(namespace=namespace, name=name)
+                    k8s_client.delete_configmap(namespace=namespace, name=name)
+                    isvc_crd=conf.get('CRD_INFO')['inferenceservice']
+                    k8s_client.delete_crd(isvc_crd['group'],isvc_crd['version'],isvc_crd['plural'],namespace=namespace,name=name)
+        except Exception as e:
+            print(e)
 
     # @pysnooper.snoop(watch_explode=('item',))
     def pre_update(self, item):
@@ -742,7 +744,7 @@ instance_group [
             flash('发现模型服务变更，启动清理服务%s:%s'%(self.src_item_json.get('model_name',''),self.src_item_json.get('model_version','')),'success')
 
 
-    def pre_delete(self, item):
+    def post_delete(self, item):
         self.delete_old_service(item.name,item.project.cluster)
         flash('服务已清理完成', category='warning')
 

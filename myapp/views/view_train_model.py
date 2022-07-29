@@ -143,8 +143,7 @@ class Training_Model_ModelView_Base():
         "pipeline_id": StringField(
             _(datamodel.obj.lab('pipeline_id')),
             description=_('任务流的id，0表示非任务流产生模型'),
-            default='0',
-            validators=[DataRequired()]
+            default='0'
         ),
         "version": StringField(
             _('版本'),

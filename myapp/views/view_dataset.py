@@ -200,7 +200,9 @@ class Dataset_ModelView_base():
 
     import_data=True
 
-
+    def post_list(self,items):
+        flash(Markup('可批量删除不使用的数据集,可批量上传自产数据集'),category='info')
+        return items
 
 class Dataset_ModelView_Api(Dataset_ModelView_base,MyappModelRestApi):
     datamodel = SQLAInterface(Dataset)

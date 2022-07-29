@@ -1,0 +1,11 @@
+{
+    "mnist": {
+        "project_name": "public",
+        "name": "mnist",
+        "version": "v2022.07.28.1",
+        "describe": "图像分类",
+        "path": "https://docker-76009.sz.gfp.tencent-cloud.com/github/cube-studio/inference/tf-mnist.tar.gz",
+        "framework": "tf",
+        "api_type": "tfserving"
+    }
+}
