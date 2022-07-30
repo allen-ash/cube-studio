@@ -102,7 +102,7 @@ class InferenceService_ModelView_base():
     edit_form_query_rel_fields = add_form_query_rel_fields
 
 
-    list_columns = ['project','label','model_name_url','model_version','inference_host_url','ip','model_status','creator','modified','operate_html']
+    list_columns = ['project','service_type','label','model_name_url','model_version','inference_host_url','ip','model_status','creator','modified','operate_html']
     cols_width={
         "project":{"type": "ellip2", "width": 150},
         "label": {"type": "ellip2", "width": 200},
@@ -247,7 +247,7 @@ class InferenceService_ModelView_base():
         self.add_form_extra_fields['command'] = StringField(
             _(self.datamodel.obj.lab('command')),
             default=service.command if service else command,
-            description='启动命令，支持多行命令，留空时将被自动重置',
+            description='启动命令，支持多行命令，<font color="#FF0000">留空时将被自动重置</font>',
             widget=MyBS3TextAreaFieldWidget(rows=3)
         )
         self.add_form_extra_fields['env'] = StringField(
@@ -336,7 +336,7 @@ class InferenceService_ModelView_base():
             description=Markup('tfserving：仅支持添加了服务签名的saved_model目录地址，例如 /xx/saved_model<br>'
                                'torch-server：torch-model-archiver编译后的mar模型文件，需保存模型结构和模型参数<br>'
                                'onnxruntime：onnx模型文件的地址<br>'
-                               'triton-server：/xx/model.onnx，/xx/model.pt，/xx/saved_model，/xx/model.plan'),
+                               'triton-server：/xx/model.onnx，torch script保存的模型/xx/model.pt，/xx/saved_model，/xx/model.plan'),
             widget=BS3TextFieldWidget(),
             validators=[]
         )
@@ -534,16 +534,13 @@ vmargs=-Dlog4j.configurationFile=file:///config/log4j2.xml
 
     def torch_log(self):
         config_str='''
-<RollingFile
-    name="access_log"
-    fileName="${env:LOG_LOCATION:-logs}/access_log.log"
-    filePattern="${env:LOG_LOCATION:-logs}/access_log.%d{dd-MMM}.log.gz">
-  <PatternLayout pattern="%d{ISO8601} - %m%n"/>
-  <Policies>
-    <SizeBasedTriggeringPolicy size="100 MB"/>
-    <TimeBasedTriggeringPolicy/>
-  </Policies>
-  <DefaultRolloverStrategy max="5"/>
+<RollingFile name="access_log" fileName="${env:LOG_LOCATION:-logs}/access_log.log" filePattern="${env:LOG_LOCATION:-logs}/access_log.%d{dd-MMM}.log.gz"> 
+  <PatternLayout pattern="%d{ISO8601} - %m%n"/>  
+  <Policies> 
+    <SizeBasedTriggeringPolicy size="100 MB"/>  
+    <TimeBasedTriggeringPolicy/> 
+  </Policies>  
+  <DefaultRolloverStrategy max="5"/> 
 </RollingFile>
 
 <RollingFile
@@ -645,14 +642,19 @@ instance_group [
             expand['platform.config'] = expand['platform.config'] if expand.get('platform.config','') else self.tfserving_platform_config()
 
         if item.service_type=='torch-server':
+            if not item.working_dir:
+                item.working_dir='/models'
+            model_file = model_path[model_path.rindex('/') + 1:] if '/' in model_path else model_path
             if '.mar' not in model_path:
                 tar_command = 'torch-model-archiver --model-name %s --version %s --handler %s --serialized-file %s --export-path /models -f'%(item.model_name,model_version,item.transformer or item.model_type,model_path)
             else:
-                tar_command='cp %s /models/'%model_path
+                if ('http:' in item.model_path or 'https://' in item.model_path) and item.working_dir=='/models':
+                    print('has download to des_version_path')
+                else:
+                    tar_command='cp -rf %s /models/'%(model_path)
             if not item.id or not item.command:
-                item.command=download_command+'mkdir -p /models && cp /config/* /models/ && '+tar_command+' && torchserve --start --model-store /models --models %s=%s.mar --foreground --ts-config=/config/config.properties'%(item.model_name,item.model_name)
-            if not item.working_dir:
-                item.working_dir='/models'
+                item.command=download_command+'cp /config/* /models/ && '+tar_command+' && torchserve --start --model-store /models --models %s=%s.mar --foreground --ts-config=/config/config.properties'%(item.model_name,item.model_name)
+
             expand['config.properties'] = expand['config.properties'] if expand.get('config.properties','') else self.torch_config()
             expand['log4j2.xml'] = expand['log4j2.xml'] if expand.get('log4j2.xml','') else self.torch_log()
 
@@ -663,7 +665,7 @@ instance_group [
                 model_type='onnx'
             if '.plan' in model_path:
                 model_type = 'tensorrt'
-            if '.pt' not in model_path:
+            if '.pt' in model_path or '.pth' in model_path:
                 model_type = 'pytorch'
 
             if not item.id or not item.command:
@@ -743,8 +745,8 @@ instance_group [
             self.delete_old_service(self.src_item_json.get('name',''), item.project.cluster)
             flash('发现模型服务变更，启动清理服务%s:%s'%(self.src_item_json.get('model_name',''),self.src_item_json.get('model_version','')),'success')
 
-
-    def post_delete(self, item):
+    # 事后无法读取到project属性
+    def pre_delete(self, item):
         self.delete_old_service(item.name,item.project.cluster)
         flash('服务已清理完成', category='warning')
 

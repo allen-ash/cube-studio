@@ -92,7 +92,7 @@ class Training_Model_ModelView_Base():
     base_permissions = ['can_add', 'can_edit', 'can_delete', 'can_list', 'can_show']  # 默认为这些
     base_order = ('changed_on', 'desc')
     order_columns = ['id']
-    list_columns = ['project_url','name','version','pipeline_url','creator','modified','deploy']
+    list_columns = ['project_url','name','version','framework','api_type','pipeline_url','creator','modified','deploy']
     add_columns = ['project','name','version','describe','path','framework','run_id','run_time','metrics','md5','api_type','pipeline_id']
     edit_columns = add_columns
     add_form_query_rel_fields = {
@@ -120,7 +120,7 @@ class Training_Model_ModelView_Base():
 
     path_describe= r'''
             tfserving：仅支持tf save_model方式的模型目录, /mnt/xx/../saved_model/<br>
-            torch-server：torch-model-archiver编译后的mar模型文件地址, /mnt/xx/../xx.mar<br>
+            torch-server：torch-model-archiver编译后的mar模型文件地址, /mnt/xx/../xx.mar或torch script保存的模型<br>
             onnxruntime：onnx模型文件的地址, /mnt/xx/../xx.onnx<br>
             tensorrt:模型文件地址, /mnt/xx/../xx.plan<br>
             '''
