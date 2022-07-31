@@ -255,6 +255,7 @@ class MyappModelBase():
         "us_task": "任务",
         "us_task_id": "任务id",
         "access":"接入",
+        "inference_config": "推理配置",
         "file_type":"文件类型",
         "responsible":"责任人",
         "cycle_unit":"周期单位",

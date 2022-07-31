@@ -354,7 +354,7 @@ def init():
     # 添加 示例 模型
     # @pysnooper.snoop()
     def create_train_model(name,describe,path,project_name,version,framework,api_type):
-        train_model = db.session.query(Training_Model).filter_by(name=name).first()
+        train_model = db.session.query(Training_Model).filter_by(name=name).filter_by(version=version).filter_by(framework=framework).first()
         project = db.session.query(Project).filter_by(name=project_name).filter_by(type='org').first()
         if not train_model and project:
             try:
@@ -427,7 +427,7 @@ def init():
 
 
     # 添加 demo 推理 服务
-    def create_inference(project_name,service_name,service_describe,image_name,command,env,model_name,workdir='',model_version='',model_path='',service_type='serving',resource_memory='2G',resource_cpu='2',resource_gpu='0',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt',metrics='',health=''):
+    def create_inference(project_name,service_name,service_describe,image_name,command,env,model_name,workdir='',model_version='',model_path='',service_type='serving',resource_memory='2G',resource_cpu='2',resource_gpu='0',ports='80',volume_mount='kubeflow-user-workspace(pvc):/mnt',metrics='',health='',inference_config=''):
         service = db.session.query(InferenceService).filter_by(name=service_name).first()
         project = db.session.query(Project).filter_by(name=project_name).filter_by(type='org').first()
         if service is None and project:
@@ -448,12 +448,19 @@ def init():
                 service.resource_gpu = resource_gpu
                 service.working_dir=workdir
                 service.command = command
+                service.inference_config = inference_config
                 service.env='\n'.join([x.strip() for x in env.split('\n') if x.split()])
                 service.ports = ports
                 service.volume_mount=volume_mount
                 service.metrics=metrics
                 service.health=health
                 service.expand = "{}"
+
+                from myapp.views.view_inferenceserving import InferenceService_ModelView_base
+                inference_class = InferenceService_ModelView_base()
+                inference_class.src_item_json = {}
+                inference_class.pre_add(service)
+
                 db.session.add(service)
                 db.session.commit()
                 print('add inference %s' % service_name)

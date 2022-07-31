@@ -853,7 +853,7 @@ INFERNENCE_PORTS={
     "tfserving":'8501',
     "torch-server":"8080,8081",
     "onnxruntime":"8001",
-    "triton-server":"8000,8002"
+    "triton-server":"8000"
 }
 INFERNENCE_METRICS={
     "tfserving":'8501:/metrics',
