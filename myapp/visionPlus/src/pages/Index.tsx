@@ -36,7 +36,7 @@ const App: React.FC = () => {
         }} onClick={() => {
           window.location.reload()
         }}>
-          网络异常，请点击刷新重试
+          解析异常，请点击刷新重试
         </div> : null
       }
       {/* 任务模板库 */}

@@ -117,10 +117,9 @@ class ETL_Task_ModelView_Base():
             "created_by": g.user.id
         }
     def post_list(self, items):
-        flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/DolphinScheduler/argo等调度平台能力','success')
+        flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/argo等调度平台能力','success')
         return items
     show_columns = ['template','name','describe','etl_task_id','created_by','changed_by','created_on','changed_on','task_args','etl_pipeline']
-
 
 
 class ETL_Task_ModelView(ETL_Task_ModelView_Base,MyappModelView):
@@ -1754,7 +1753,7 @@ class ETL_Pipeline_ModelView_Api(ETL_Pipeline_ModelView_Base,MyappModelRestApi):
         }
 
     def post_list(self, items):
-        flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/DolphinScheduler/argo等调度平台能力','success')
+        flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/argo等调度平台能力','success')
         return items
 
 appbuilder.add_api(ETL_Pipeline_ModelView_Api)

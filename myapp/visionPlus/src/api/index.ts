@@ -177,7 +177,7 @@ const mod_component_info = (data: any): Promise<any> => {
 };
 
 const getTemplateCommandConfig = (): Promise<any> => {
-  return ajax.get('/us_pipeline_modelview/template/list/');
+  return ajax.get('/etl_pipeline_modelview/template/list/');
   return new Promise((resolve, reject) => {
     const cusRes = {
       "message": "success",
@@ -1057,7 +1057,7 @@ const getTemplateCommandConfig = (): Promise<any> => {
 // 保存配置
 const pipeline_modelview_save = (pipelineId: number | string, data: Record<any, any>): Promise<any> => {
   return ajax.post({
-    url: `/us_pipeline_modelview/config/${pipelineId}`,
+    url: `/etl_pipeline_modelview/config/${pipelineId}`,
     data,
   });
 };
@@ -1096,7 +1096,7 @@ const pipeline_modelview_all = (filters: string): Promise<any> => {
 
 // 获取流水线信息
 const pipeline_modelview_detail = (pipelineId: number | string): Promise<any> => {
-  return ajax.get(`/us_pipeline_modelview/config/${pipelineId}`);
+  return ajax.get(`/etl_pipeline_modelview/config/${pipelineId}`);
   return ajax.get(`/pipeline_modelview/api/${pipelineId}`);
 };
 

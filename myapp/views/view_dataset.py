@@ -129,6 +129,18 @@ class Dataset_ModelView_base():
     }
 
     add_form_extra_fields = {
+        "name": StringField(
+            label=_(datamodel.obj.lab('name')),
+            description='数据集英文名',
+            widget=BS3TextFieldWidget(),
+            validators=[DataRequired()]
+        ),
+        "label": StringField(
+            label=_(datamodel.obj.lab('label')),
+            description='数据集中文名',
+            widget=BS3TextFieldWidget(),
+            validators=[DataRequired()]
+        ),
         "describe": StringField(
             label=_(datamodel.obj.lab('describe')),
             description='数据集描述',
