@@ -8,9 +8,8 @@ import {
   BrowserRouterProps,
   useLocation
 } from "react-router-dom";
-
-import { Dropdown, Menu, Select, Spin } from 'antd';
 import { IRouterConfigPlusItem } from './api/interface/baseInterface';
+import { Dropdown, Menu, Select, Spin } from 'antd';
 import { formatRoute, getDefaultOpenKeys, routerConfigPlus } from './routerConfig';
 import SubMenu from 'antd/lib/menu/SubMenu';
 import { clearWaterNow, drawWater, drawWaterNow, getParam, obj2UrlParam, parseParam2Obj } from './util'
@@ -39,7 +38,7 @@ const AppWrapper = (props: IProps) => {
   // const [CurrentRouteComponent, setCurrentRouteComponent] = useState(() => () => RouterConfig(routerConfigPlus))
   const [CurrentRouteComponent, setCurrentRouteComponent] = useState<any>()
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false)
-  const [imgUrlProtraits, setImgUrlProtraits] = useState(`http://tpp.tmeoa.com/photo/48/${userName}.png`)
+  const [imgUrlProtraits, setImgUrlProtraits] = useState('')
 
   const navigate = useNavigate();
   const location = useLocation()
@@ -265,22 +264,14 @@ const AppWrapper = (props: IProps) => {
     <div className="content-container fade-in">
       {/* Header */}
       <div className="navbar">
-        <div className="d-f ac pl48 h100">
-          <div className="cp" style={{ width: 152 }} onClick={() => {
+        <div className="d-f ac pl24 h100">
+          <div className="cp" onClick={() => {
             setCurrentAppIndex(undefined)
             setcurrentRoute('/')
             navigate('/')
           }}>
-            <img style={{ height: 42 }} src={require("./images/logo.svg").default} alt="img" />
+            <img style={{ height: 42 }} src={require("./images/logoCB.svg").default} alt="img" />
           </div>
-
-          {/* <div className="cp mr32" onClick={() => {
-            setCurrentAppIndex(undefined)
-            setcurrentRoute('/')
-            navigate('/')
-          }}>
-            <img style={{ height: 32 }} src={require("./images/star2.svg").default} alt="img" />
-          </div> */}
 
           {
             currentAppList.length ? <ul className="mainapp-topmenu">
@@ -326,15 +317,15 @@ const AppWrapper = (props: IProps) => {
           </div> */}
 
           <a
-            href="https://doc.weixin.qq.com/doc/w3_AGMAOAb-ACMUD0tIlQfR4u1BIj2nc?scode=AJEAIQdfAAoC8AWAeuAfoApAY1AC8"
+            href="https://github.com/tencentmusic/cube-studio/wiki"
             target="_blank"
             className="mr12 d-f ac"
           >
-            <span className="pr4">平台文档</span><QuestionCircleOutlined style={{ fontSize: 20, color: "#1672fa" }} />
+            <span className="pr4">平台文档</span><QuestionCircleOutlined className="c-theme" style={{ fontSize: 20 }} />
           </a>
 
 
-          <GithubOutlined className="mr24" style={{ fontSize: 20, color: "#1672fa" }} onClick={() => {
+          <GithubOutlined className="mr24 c-theme" style={{ fontSize: 20 }} onClick={() => {
             window.open('https://github.com/tencentmusic/cube-studio', '_bank')
           }} />
 
@@ -350,44 +341,13 @@ const AppWrapper = (props: IProps) => {
           </Menu>
           }>
             <img className="mr8 cp" style={{ borderRadius: 200, height: 32 }} src={imgUrlProtraits} onError={() => {
-              // setImgUrlProtraits('https://dcloud.oa.com/Public/Avatar/admin.png')
               setImgUrlProtraits(require('./images/male.png'))
             }} alt="img" />
           </Dropdown>
         </div>
       </div>
 
-      {/* Document */}
       <div className="main-content-container">
-        {/* <a
-          href="https://github.com/tencentmusic/cube-studio/tree/master/docs/example"
-          target="_blank"
-          className="helpDoc"
-        >
-          平<br />台<br />文<br />档<br />
-          <img src={require('./images/right.png')} />
-        </a> */}
-
-        {/* old side nav */}
-        {/* {
-          currentAppList.filter(app => !!app.hidden).length ? <ul className="mainapp-sidemenu">
-            {
-              currentAppList.filter(app => !!app.hidden).map((app) => {
-                const currentAppName = '/' + currentRoute.substring(1).split('/')[0] || ''
-                return <li
-                  onClick={() => handleClickApp(app, app.appIndex || 0)}
-                  key={`appList${app.appIndex}`}
-                  style={
-                    currentAppName === app.path ? { background: "#fcfcfc", color: '#1e1653' } : {}
-                  }
-                >
-                  <div className="icon-custom" dangerouslySetInnerHTML={{ __html: app.icon }}></div>
-                  <div className="mainapp-sidemenu-name">{app.title}</div>
-                </li>
-              })
-            }
-          </ul> : null
-        } */}
 
         {renderMenu(currentAppIndex)}
 
@@ -395,7 +355,6 @@ const AppWrapper = (props: IProps) => {
           {
             CurrentRouteComponent && <CurrentRouteComponent />
           }
-          {/* <div className="ta-c ptb16">©2022 by Data Leap All Rights Reserved</div> */}
         </div>
 
       </div >

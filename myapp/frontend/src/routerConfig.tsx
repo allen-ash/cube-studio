@@ -10,7 +10,6 @@ const isAdmin = userName === 'admin'
 
 const LoadingComponent = () => {
     return <div className="d-f ac jc w100 h100">
-        {/* <img src={require('./images/loadingTme.gif')} alt="" /> */}
         <LoadingStar />
     </div>
 }
@@ -32,7 +31,6 @@ export const securitySettingConfig: IRouterConfigPlusItem[] = [
         title: '安全设置',
         isLocalMenu: true,
         icon: <SettingOutlined style={{ fontSize: 18 }} />,
-        // element: lazy2Compont(() => import("./pages/Face/Index") as any)
         children: [
             {
                 path: '/security/userList',
@@ -88,78 +86,15 @@ export const securitySettingConfig: IRouterConfigPlusItem[] = [
 ]
 
 export const innerDynamicRouterConfig: IRouterConfigPlusItem[] = [
-    {
-        path: '/dataSearch',
-        title: '数据搜索',
-        key: 'data_search',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        icon: '',
-        element: lazy2Compont(() => import("./pages/DataSearch/DataSearch") as any)
-    },
-    {
-        path: '/dataDiscovery',
-        title: '数据发现',
-        key: 'data_discovery',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/DataDiscovery/DataDiscovery"))
-    },
-    {
-        path: '/bloodRelation',
-        title: '血缘关系',
-        key: 'blood_relation',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/BloodRelation/BloodRelationApp"))
-    },
-    {
-        path: '/instanceManager',
-        title: '实例管理',
-        key: 'instance_manager',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/Swallow/InstanceListManager"))
-    },
-    {
-        path: '/taskManager',
-        title: '任务管理',
-        key: 'task_manager',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/Swallow/TaskListManager"))
-    },
-    {
-        path: '/tableTtlManager',
-        title: '表TTL管理',
-        key: 'table_ttl_manager',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/Swallow/TableTtlManager"))
-    },
-    {
-        path: '/taskStatus',
-        title: '任务状态',
-        key: 'task_status',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/Swallow/TaskStatusList"))
-    },
-    {
-        path: '/orderStatus',
-        title: '工单状态',
-        key: 'order_status',
-        icon: '',
-        menu_type: 'innerRouter',
-        isCollapsed: true,
-        element: lazy2Compont(() => import("./pages/Swallow/OrderStatus"))
-    },
+    // {
+    //     path: '/xxx',
+    //     title: 'xxx',
+    //     key: 'xxx',
+    //     icon: '',
+    //     menu_type: 'innerRouter',
+    //     isCollapsed: true,
+    //     element: lazy2Compont(() => import("./pages/xxx"))
+    // },
 ]
 
 const innerDynamicRouterConfigMap = innerDynamicRouterConfig.reduce((pre, next) => ({
@@ -171,12 +106,7 @@ export const routerConfigPlus: IRouterConfigPlusItem[] = [
     {
         path: '/',
         index: true,
-        // name: 'index',
-        // title: '首页',
-        // isLocalMenu: true,
-        // icon: <HomeOutlined style={{ fontSize: 18 }} />,
-        // element: lazy2Compont(() => import("./pages/Face/Index") as any)
-        element: lazy2Compont(() => import("./pages/Index/Index") as any)
+        element: lazy2Compont(() => import("./pages/IframeTemplate"), { url: '/myapp/home' })
     },
     {
         path: '/showData',
@@ -185,20 +115,12 @@ export const routerConfigPlus: IRouterConfigPlusItem[] = [
     },
     {
         path: '/showOutLink',
-        title: 'cube链接',
+        title: '外链',
         element: lazy2Compont(() => import("./pages/IframeTemplate") as any)
-    },
-    {
-        path: '/tableDetail',
-        title: '元数据详情',
-        element: lazy2Compont(() => import("./pages/TableDetail/TableDetail") as any)
     },
     ...innerDynamicRouterConfig,
     {
         path: '/user',
-        // name: 'user',
-        // title: '用户中心',
-        // isLocalMenu: true,
         icon: <UserOutlined style={{ fontSize: 18 }} />,
         element: lazy2Compont(() => import("./pages/IframeTemplate"), { url: '/users/userinfo/' })
         // children: [
@@ -250,10 +172,11 @@ export const formatRoute = (data: IAppMenuItem[]): IRouterConfigPlusItem[] => {
                         element: OutLinkComponent
                     })
                 } else if (item.menu_type === 'innerRoute') {
+                    const page = innerDynamicRouterConfigMap[item.name]
                     res.push({
                         ...item,
                         path: `/${currentPath.join('/')}`,
-                        element: innerDynamicRouterConfigMap[item.name].element
+                        element: page ? innerDynamicRouterConfigMap[item.name].element : ADUGTemplateComponent
                     })
                 } else if (item.menu_type === 'iframe') {
                     res.push({

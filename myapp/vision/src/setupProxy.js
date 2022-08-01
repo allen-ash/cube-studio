@@ -5,7 +5,7 @@ module.exports = function (app) {
     app.use(
         ['**/api/**', '/myapp'],
         createProxyMiddleware({
-            target: 'http://kubeflow.tke.woa.com',
+            target: 'http://localhost',
             changeOrigin: true,
         })
     );

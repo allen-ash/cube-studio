@@ -10,7 +10,7 @@ export default function Page404() {
                 {/* <div>
                     <img className="pb32 w256" src={require('../images/star.svg').default} alt="" />
                 </div> */}
-                <div className="fs16">Wellcome to cube数据平台 | 如遇到使用问题，可以联系管理员 </div>
+                <div className="fs16">Wellcome to Cube Studio</div>
             </div>
         </div>
     )

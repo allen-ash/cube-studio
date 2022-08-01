@@ -53,15 +53,8 @@ const errorHandler = (error: { response: Response }): Response => {
 };
 
 const axios = Axios.create({
-    ...{
-        timeout: 600000,
-        responseType: 'json',
-        // baseURL: baseApi,
-        // withCredentials: true,
-    },
-    // ...process.env.NODE_ENV === 'development' ? {} : {
-    //     baseURL: baseApi
-    // },
+    timeout: 600000,
+    responseType: 'json',
 });
 
 
