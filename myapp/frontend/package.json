@@ -110,7 +110,7 @@
   },
   "scripts": {
     "start": "node scripts/start.js",
-    "build": "npm run buildSelf && npm run buildFab",
+    "build": "npm run buildSelf",
     "buildSelf": "cross-env APP_ENV=frontend node scripts/build.js",
     "buildFab": "cross-env APP_ENV=fab node scripts/build.js",
     "test": "node scripts/test.js"

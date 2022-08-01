@@ -185,7 +185,7 @@ export function drawWater() {
     if (!id)
         id = '';
     const content = username;
-    const src = id + " 星云 @TME业务数据智能中心";
+    const src = id + " @TME Cube Studio";
 
     window.onload = function () {
         drawWaterMark({ content: content, src: src });
@@ -202,7 +202,7 @@ export function drawWaterNow() {
     if (!id)
         id = '';
     const content = username;
-    const src = id + " 星云 @TME业务数据智能中心";
+    const src = id + " @TME Cube Studio";
 
     drawWaterMark({ content: content, src: src });
 }
