@@ -6,6 +6,7 @@ import traceback
 import urllib.parse
 import os
 from inspect import isfunction
+from sqlalchemy import create_engine
 from flask_appbuilder.actions import action
 from apispec import yaml_utils
 from flask_babel import gettext as __
@@ -1189,6 +1190,22 @@ class MyappModelRestApi(ModelRestApi):
 
 
 
+    @expose("/upload_demo/", methods=["GET"])
+    def upload_demo(self):
+
+        demostr=','.join(list(self.add_columns))+"\n"+','.join(['xx' for x in list(self.add_columns)])
+
+        file_name = self.datamodel.obj.__tablename__
+        csv_file='%s.csv'%file_name
+        if os.path.exists(csv_file):
+            os.remove(csv_file)
+        file = open(csv_file,mode='w',encoding='utf-8-sig')
+        file.writelines(demostr)
+        file.close()
+        csv_file = os.path.abspath(csv_file)
+        response = self.csv_response(csv_file,file_name=file_name)
+        return response
+
     @expose("/upload/", methods=["POST"])
     def upload(self):
         csv_file = request.files.get('csv_file')  # FileStorage
@@ -1250,6 +1267,33 @@ class MyappModelRestApi(ModelRestApi):
         }
         return self.response(200,**back)
 
+
+    @expose("/download/", methods=["GET"])
+    # @pysnooper.snoop()
+    def download(self):
+        import pandas
+        sqllchemy_uri = conf.get('SQLALCHEMY_DATABASE_URI','')
+        bind_key = getattr(self.datamodel.obj,'__bind_key__',None)
+        if bind_key:
+            bind_sqllchemy_uri = conf['SQLALCHEMY_BINDS'].get(bind_key,'')
+            if bind_sqllchemy_uri:
+                sqllchemy_uri=bind_sqllchemy_uri
+
+        import sqlalchemy.engine.url as url
+        uri = url.make_url(sqllchemy_uri)
+        sql_engine = create_engine(uri)
+        table_name = self.datamodel.obj.__tablename__
+        sql = 'select `%s` from %s' % ('`,`'.join(self.show_columns), table_name)
+        # print(sql)
+        results = pandas.read_sql_query(sql, sql_engine)
+
+        file_path = '%s.csv' % table_name
+        csv_file = os.path.abspath(file_path)
+        if os.path.exists(csv_file):
+            os.remove(csv_file)
+        results.to_csv(csv_file, index=False, sep=",")  # index 是第几行的表示
+        response = self.csv_response(csv_file, file_name=table_name)
+        return response
 
 
     @action("muldelete", __("Delete"), __("Delete all Really?"), "fa-trash", single=False)

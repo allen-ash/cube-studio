@@ -898,7 +898,7 @@ MODEL_URLS = {
     "us_pipeline":"/frontend/dev/data_pipeline/us_pipeline",
     "us_task":"/frontend/dev/data_pipeline/task_manager",
     "us_task_instance":"/frontend/dev/data_pipeline/instance_manager",
-    "dataset":"/frontend/dataleap/media_data/label_data"
+    "dataset":"/frontend/dataleap/media_data/dataset"
 }
 
 
