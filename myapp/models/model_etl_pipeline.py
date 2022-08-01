@@ -39,8 +39,8 @@ from myapp.utils.py import py_k8s
 import pysnooper
 
 # 定义model
-class US_Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
-    __tablename__ = 'us_pipeline'
+class ETL_Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
+    __tablename__ = 'etl_pipeline'
     id = Column(Integer, primary_key=True)
     name = Column(String(100),nullable=False,unique=True)
     describe = Column(String(200),nullable=False)
@@ -52,14 +52,14 @@ class US_Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
     config = Column(Text(65536),default='{}')   # pipeline的全局配置
     expand = Column(Text(65536),default='[]')
 
-    # export_children = "us_task"
+    # export_children = "etl_task"
 
     def __repr__(self):
         return self.name
 
     @property
-    def us_pipeline_url(self):
-        pipeline_url="/us_pipeline_modelview/web/" +str(self.id)
+    def etl_pipeline_url(self):
+        pipeline_url="/etl_pipeline_modelview/web/" +str(self.id)
         return Markup(f'<a target=_blank href="{pipeline_url}">{self.describe}</a>')
 
 
@@ -88,13 +88,13 @@ class US_Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
         # workflow = db.session.query(Workflow).filter_by(foreign_key= str(self.id)).filter_by(status= 'Running').filter_by(create_time > datetime.datetime.now().strftime("%Y-%m-%d")).all()
         # workflow_num = len(workflow) if workflow else 0
         # url = '/workflow_modelview/list/?_flt_2_name=%s'%self.name.replace("_","-")[:54]
-        url_path = conf.get('MODEL_URLS', {}).get("us_task_instance")
+        url_path = conf.get('MODEL_URLS', {}).get("etl_task_instance")
         # print(url)
         return Markup(f"<a target=_blank href='{url_path}'>任务实例</a>")
 
 
     def clone(self):
-        return US_Pipeline(
+        return ETL_Pipeline(
             name=self.name.replace('_', '-'),
             describe=self.describe,
             project_id=self.project_id,
@@ -104,31 +104,31 @@ class US_Pipeline(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
         )
 
 # 定义model
-class US_Task(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
-    __tablename__ = 'us_task'
+class ETL_Task(Model,ImportMixin,AuditMixinNullable,MyappModelBase):
+    __tablename__ = 'etl_task'
     id = Column(Integer, primary_key=True)
     name = Column(String(100),nullable=False,unique=True)
     describe = Column(String(200),nullable=False)
-    us_pipeline_id = Column(Integer, ForeignKey('us_pipeline.id'),nullable=False)  # 定义外键
-    us_pipeline = relationship(
-        "US_Pipeline", foreign_keys=[us_pipeline_id]
+    etl_pipeline_id = Column(Integer, ForeignKey('etl_pipeline.id'),nullable=False)  # 定义外键
+    etl_pipeline = relationship(
+        "ETL_Pipeline", foreign_keys=[etl_pipeline_id]
     )
     template = Column(String(100),nullable=False)
     task_args = Column(Text(65536),default='{}')
-    us_task_id = Column(String(100),nullable=False)
+    etl_task_id = Column(String(100),nullable=False)
     expand = Column(Text(65536),default='[]')
 
 
-    # export_parent = "us_pipeline"
+    # export_parent = "etl_pipeline"
 
 
     def __repr__(self):
         return self.name
 
     @property
-    def us_pipeline_url(self):
-        pipeline_url="/us_pipeline_modelview/web/" +str(self.us_pipeline.id)
-        return Markup(f'<a target=_blank href="{pipeline_url}">{self.us_pipeline.describe}</a>')
+    def etl_pipeline_url(self):
+        pipeline_url="/etl_pipeline_modelview/web/" +str(self.etl_pipeline.id)
+        return Markup(f'<a target=_blank href="{pipeline_url}">{self.etl_pipeline.describe}</a>')
 
 
 

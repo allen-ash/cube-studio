@@ -895,9 +895,9 @@ MODEL_URLS = {
     "metadata_metric": "/frontend/dataleap/metadata/metadata_metric",
     "dimension": "/frontend/dataleap/metadata/metadata_dimension",
     "metadata_table": "/frontend/dataleap/metadata/metadata_table",
-    "us_pipeline":"/frontend/dev/data_pipeline/us_pipeline",
-    "us_task":"/frontend/dev/data_pipeline/task_manager",
-    "us_task_instance":"/frontend/dev/data_pipeline/instance_manager",
+    "etl_pipeline":"/frontend/dev/data_pipeline/etl_pipeline",
+    "etl_task":"/frontend/dev/data_pipeline/task_manager",
+    "etl_task_instance":"/frontend/dev/data_pipeline/instance_manager",
     "dataset":"/frontend/dataleap/media_data/label_data"
 }
 
