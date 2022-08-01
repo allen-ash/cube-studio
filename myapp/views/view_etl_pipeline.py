@@ -11,7 +11,7 @@ import urllib.parse
 from kfp import compiler
 from sqlalchemy.exc import InvalidRequestError
 # 将model添加成视图，并控制在前端的显示
-from myapp.models.model_us_pipeline import US_Pipeline,US_Task
+from myapp.models.model_etl_pipeline import ETL_Pipeline,ETL_Task
 from myapp.models.model_team import Project,Project_User
 from myapp.views.view_team import Project_Join_Filter
 from flask_appbuilder.actions import action
@@ -91,23 +91,23 @@ conf = app.config
 logging = app.logger
 APPGROUP_INFO=['资源组1','资源组2','资源组3']
 
-class US_Task_ModelView_Base():
-    datamodel = SQLAInterface(US_Task)
-    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('us_pipeline')
+class ETL_Task_ModelView_Base():
+    datamodel = SQLAInterface(ETL_Task)
+    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('etl_pipeline')
 
     base_permissions = ['can_list','can_show','can_delete']
     base_order = ("changed_on", "desc")
     # order_columns = ['id','changed_on']
     label_title="任务"
     order_columns = ['id']
-    search_columns = ['name', 'us_pipeline','template','us_task_id','created_by']
-    list_columns = ['template','name','describe','us_task_id','us_pipeline_url','creator']
+    search_columns = ['name', 'etl_pipeline','template','etl_task_id','created_by']
+    list_columns = ['template','name','describe','etl_task_id','etl_pipeline_url','creator']
     cols_width = {
         "template":{"type": "ellip2", "width": 200},
         "name": {"type": "ellip2", "width": 300},
         "describe": {"type": "ellip2", "width": 300},
-        "us_task_id": {"type": "ellip2", "width": 200},
-        "us_pipeline_url": {"type": "ellip2", "width": 200},
+        "etl_task_id": {"type": "ellip2", "width": 200},
+        "etl_pipeline_url": {"type": "ellip2", "width": 200},
     }
     spec_lable_columns={
         "template":"功能类型"
@@ -119,27 +119,27 @@ class US_Task_ModelView_Base():
     def post_list(self, items):
         flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/DolphinScheduler/argo等调度平台能力','success')
         return items
-    show_columns = ['template','name','describe','us_task_id','created_by','changed_by','created_on','changed_on','task_args','us_pipeline']
+    show_columns = ['template','name','describe','etl_task_id','created_by','changed_by','created_on','changed_on','task_args','etl_pipeline']
 
 
 
-class US_Task_ModelView(US_Task_ModelView_Base,MyappModelView):
-    datamodel = SQLAInterface(US_Task)
+class ETL_Task_ModelView(ETL_Task_ModelView_Base,MyappModelView):
+    datamodel = SQLAInterface(ETL_Task)
 
 
-appbuilder.add_view_no_menu(US_Task_ModelView)
+appbuilder.add_view_no_menu(ETL_Task_ModelView)
 
 # 添加api
-class US_Task_ModelView_Api(US_Task_ModelView_Base,MyappModelRestApi):
-    datamodel = SQLAInterface(US_Task)
-    route_base = '/us_task_modelview/api'
+class ETL_Task_ModelView_Api(ETL_Task_ModelView_Base,MyappModelRestApi):
+    datamodel = SQLAInterface(ETL_Task)
+    route_base = '/etl_task_modelview/api'
 
 
-appbuilder.add_api(US_Task_ModelView_Api)
+appbuilder.add_api(ETL_Task_ModelView_Api)
 
 
 
-class US_Pipeline_Filter(MyappFilter):
+class ETL_Pipeline_Filter(MyappFilter):
     # @pysnooper.snoop()
     def apply(self, query, func):
         user_roles = [role.name.lower() for role in list(self.get_user_roles())]
@@ -158,20 +158,20 @@ class US_Pipeline_Filter(MyappFilter):
 
 
 
-class US_Pipeline_ModelView_Base():
+class ETL_Pipeline_ModelView_Base():
     label_title='任务流'
-    datamodel = SQLAInterface(US_Pipeline)
-    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('us_pipeline','')
+    datamodel = SQLAInterface(ETL_Pipeline)
+    check_redirect_list_url = conf.get('MODEL_URLS',{}).get('etl_pipeline','')
 
     base_permissions = ['can_show','can_edit','can_list','can_delete','can_add']
     base_order = ("changed_on", "desc")
     # order_columns = ['id','changed_on']
     order_columns = ['id']
 
-    list_columns = ['project','us_pipeline_url','creator','modified']
+    list_columns = ['project','etl_pipeline_url','creator','modified']
     cols_width = {
         "project":{"type": "ellip2", "width": 200},
-        "us_pipeline_url": {"type": "ellip2", "width": 400},
+        "etl_pipeline_url": {"type": "ellip2", "width": 400},
         "creator": {"type": "ellip2", "width": 100},
         "modified": {"type": "ellip2", "width": 100},
     }
@@ -181,10 +181,10 @@ class US_Pipeline_ModelView_Base():
     edit_columns = ['project','name','describe','created_by']
 
 
-    base_filters = [["id", US_Pipeline_Filter, lambda: []]]  # 设置权限过滤器
+    base_filters = [["id", ETL_Pipeline_Filter, lambda: []]]  # 设置权限过滤器
     conv = GeneralModelConverter(datamodel)
 
-    # related_views = [US_Task_ModelView,]
+    # related_views = [ETL_Task_ModelView,]
 
     add_form_extra_fields = {
         "name": StringField(
@@ -261,21 +261,21 @@ class US_Pipeline_ModelView_Base():
     def pre_delete(self, pipeline):
         flash('此处仅删除本地元数据，请及时删除远程任务','success')
         # 删除本地
-        exist_tasks = db.session.query(US_Task).filter_by(us_pipeline_id=pipeline.id).all()
+        exist_tasks = db.session.query(ETL_Task).filter_by(etl_pipeline_id=pipeline.id).all()
         for exist_task in exist_tasks:
             db.session.delete(exist_task)
             db.session.commit()
 
 
     # @pysnooper.snoop(watch_explode=('dag_json',))
-    def fix_pipeline_task(self,us_pipeline):
-        if not us_pipeline:
+    def fix_pipeline_task(self,etl_pipeline):
+        if not etl_pipeline:
             return
-        dag_json = json.loads(us_pipeline.dag_json) if us_pipeline.dag_json else {}
+        dag_json = json.loads(etl_pipeline.dag_json) if etl_pipeline.dag_json else {}
         # print(dag_json)
         task_ids = [int(dag_json[task_name].get('task_id','')) for task_name in dag_json if dag_json[task_name].get('task_id','')]
 
-        exist_tasks = db.session.query(US_Task).filter_by(us_pipeline_id=us_pipeline.id).all()
+        exist_tasks = db.session.query(ETL_Task).filter_by(etl_pipeline_id=etl_pipeline.id).all()
 
         # 删除已经删除的task
         for exist_task in exist_tasks:
@@ -289,38 +289,38 @@ class US_Pipeline_ModelView_Base():
             task_id = dag_json[task_name].get('task_id','')
             task_args = dag_json[task_name].get('task-config', {})
             if task_id:
-                exist_task = db.session.query(US_Task).filter_by(us_pipeline_id=us_pipeline.id).filter_by(id=int(task_id)).first()
+                exist_task = db.session.query(ETL_Task).filter_by(etl_pipeline_id=etl_pipeline.id).filter_by(id=int(task_id)).first()
                 if exist_task:
                     exist_task.name = task_name
                     exist_task.describe=dag_json[task_name].get('label','')
                     exist_task.template = dag_json[task_name].get('template', '')
                     exist_task.task_args = json.dumps(task_args)
-                    exist_task.us_task_id = dag_json[task_name].get('us_task_id', '')
+                    exist_task.etl_task_id = dag_json[task_name].get('etl_task_id', '')
                     db.session.commit()
             else:
-                us_task = US_Task(
+                etl_task = ETL_Task(
                     name=task_name,
                     describe=dag_json[task_name].get('label', ''),
                     template=dag_json[task_name].get('template', ''),
                     task_args = json.dumps(task_args),
-                    us_task_id=dag_json[task_name].get('us_task_id', ''),
-                    us_pipeline_id=us_pipeline.id
+                    etl_task_id=dag_json[task_name].get('etl_task_id', ''),
+                    etl_pipeline_id=etl_pipeline.id
                 )
-                db.session.add(us_task)
+                db.session.add(etl_task)
                 db.session.commit()
-                dag_json[task_name]['task_id']=us_task.id
+                dag_json[task_name]['task_id']=etl_task.id
 
-        us_pipeline.dag_json = json.dumps(dag_json,indent=4,ensure_ascii=False)
+        etl_pipeline.dag_json = json.dumps(dag_json,indent=4,ensure_ascii=False)
         db.session.commit()
 
         pass
         pass
 
-    @expose("/config/<us_pipeline_id>",methods=("GET",'POST'))
+    @expose("/config/<etl_pipeline_id>",methods=("GET",'POST'))
     # @pysnooper.snoop()
-    def pipeline_config(self,us_pipeline_id):
-        print(us_pipeline_id)
-        pipeline = db.session.query(US_Pipeline).filter_by(id=us_pipeline_id).first()
+    def pipeline_config(self,etl_pipeline_id):
+        print(etl_pipeline_id)
+        pipeline = db.session.query(ETL_Pipeline).filter_by(id=etl_pipeline_id).first()
 
         if not pipeline:
             return jsonify({
@@ -380,12 +380,12 @@ class US_Pipeline_ModelView_Base():
             back_dag_json[task_name]["task_jump_button"] = [
                 {
                     "name": "任务查看",
-                    "action_url": conf.get('MODEL_URLS', {}).get('us_task')+'?taskId='+task.get('us_task_id',''),
+                    "action_url": conf.get('MODEL_URLS', {}).get('etl_task')+'?taskId='+task.get('etl_task_id',''),
                     # "icon_svg": '<svg t="1656906118773" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3832" width="200" height="200"><path d="M472.615385 137.846154l-33.476923-33.476923c-9.846154-9.846154-23.630769-9.846154-33.476924 0L196.923077 311.138462l-84.676923-82.707693c-9.846154-9.846154-23.630769-9.846154-33.476923 0l-33.476923 33.476923c-9.846154 9.846154-9.846154 23.630769 0 33.476923l116.184615 116.184616c9.846154 9.846154 21.661538 13.784615 33.476923 13.784615 11.815385 0 23.630769-3.938462 33.476923-13.784615L472.615385 171.323077c7.876923-7.876923 7.876923-23.630769 0-33.476923z m480.492307 224.492308H541.538462c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h411.56923c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z m0 281.6H447.015385c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h506.092307c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z m-697.107692 0H192.984615c-17.723077 0-31.507692-13.784615-31.507692-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507692-31.507693H256c17.723077 0 31.507692 13.784615 31.507692 31.507693v63.015384c1.969231 17.723077-13.784615 31.507692-31.507692 31.507693zM256 925.538462H192.984615c-17.723077 0-31.507692-13.784615-31.507692-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507692-31.507693H256c17.723077 0 31.507692 13.784615 31.507692 31.507693v63.015384c1.969231 17.723077-13.784615 31.507692-31.507692 31.507693z m697.107692 0H447.015385c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h506.092307c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z" p-id="3833"></path></svg>'
                 },
                 {
                     "name": "任务实例",
-                    "action_url": conf.get('MODEL_URLS', {}).get('us_task_instance')+"?taskId="+task.get('us_task_id',''),
+                    "action_url": conf.get('MODEL_URLS', {}).get('etl_task_instance')+"?taskId="+task.get('etl_task_id',''),
                     # "icon_svg": '<svg t="1656906118773" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3832" width="200" height="200"><path d="M472.615385 137.846154l-33.476923-33.476923c-9.846154-9.846154-23.630769-9.846154-33.476924 0L196.923077 311.138462l-84.676923-82.707693c-9.846154-9.846154-23.630769-9.846154-33.476923 0l-33.476923 33.476923c-9.846154 9.846154-9.846154 23.630769 0 33.476923l116.184615 116.184616c9.846154 9.846154 21.661538 13.784615 33.476923 13.784615 11.815385 0 23.630769-3.938462 33.476923-13.784615L472.615385 171.323077c7.876923-7.876923 7.876923-23.630769 0-33.476923z m480.492307 224.492308H541.538462c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h411.56923c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z m0 281.6H447.015385c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h506.092307c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z m-697.107692 0H192.984615c-17.723077 0-31.507692-13.784615-31.507692-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507692-31.507693H256c17.723077 0 31.507692 13.784615 31.507692 31.507693v63.015384c1.969231 17.723077-13.784615 31.507692-31.507692 31.507693zM256 925.538462H192.984615c-17.723077 0-31.507692-13.784615-31.507692-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507692-31.507693H256c17.723077 0 31.507692 13.784615 31.507692 31.507693v63.015384c1.969231 17.723077-13.784615 31.507692-31.507692 31.507693z m697.107692 0H447.015385c-17.723077 0-31.507692-13.784615-31.507693-31.507693v-63.015384c0-17.723077 13.784615-31.507692 31.507693-31.507693h506.092307c17.723077 0 31.507692 13.784615 31.507693 31.507693v63.015384c0 17.723077-13.784615 31.507692-31.507693 31.507693z" p-id="3833"></path></svg>'
                 }
             ]
@@ -416,14 +416,14 @@ class US_Pipeline_ModelView_Base():
             "pipeline_jump_button": [
                 {
                     "name":"任务查看",
-                    "action_url":conf.get('MODEL_URLS',{}).get('us_task'),
+                    "action_url":conf.get('MODEL_URLS',{}).get('etl_task'),
                     # "icon_svg":'<svg t="1644980982636" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2611" width="128" height="128"><path d="M913.937279 113.328092c-32.94432-32.946366-76.898391-51.089585-123.763768-51.089585s-90.819448 18.143219-123.763768 51.089585L416.737356 362.999454c-32.946366 32.94432-51.089585 76.898391-51.089585 123.763768s18.143219 90.819448 51.087539 123.763768c25.406646 25.40767 57.58451 42.144866 93.053326 48.403406 1.76418 0.312108 3.51915 0.463558 5.249561 0.463558 14.288424 0 26.951839-10.244318 29.519314-24.802896 2.879584-16.322757-8.016581-31.889291-24.339338-34.768875-23.278169-4.106528-44.38386-15.081487-61.039191-31.736818-21.61018-21.61018-33.509185-50.489928-33.509185-81.322144s11.899004-59.711963 33.509185-81.322144l15.864316-15.864316c-0.267083 1.121544-0.478907 2.267647-0.6191 3.440355-1.955538 16.45988 9.800203 31.386848 26.260084 33.344432 25.863041 3.072989 49.213865 14.378475 67.527976 32.692586 21.608134 21.608134 33.509185 50.489928 33.509185 81.322144s-11.901051 59.71401-33.509185 81.322144L318.53987 871.368764c-21.61018 21.61018-50.489928 33.511231-81.322144 33.511231-30.832216 0-59.711963-11.901051-81.322144-33.511231-21.61018-21.61018-33.509185-50.489928-33.509185-81.322144s11.899004-59.711963 33.509185-81.322144l169.43597-169.438017c11.720949-11.718903 11.720949-30.722722 0-42.441625-11.718903-11.718903-30.722722-11.718903-42.441625 0L113.452935 666.282852c-32.946366 32.94432-51.089585 76.898391-51.089585 123.763768 0 46.865377 18.143219 90.819448 51.089585 123.763768 32.94432 32.946366 76.898391 51.091632 123.763768 51.091632s90.819448-18.145266 123.763768-51.091632l249.673409-249.671363c32.946366-32.94432 51.089585-76.898391 51.089585-123.763768-0.002047-46.865377-18.145266-90.819448-51.089585-123.763768-27.5341-27.536146-64.073294-45.240367-102.885252-49.854455-3.618411-0.428765-7.161097-0.196475-10.508331 0.601704l211.589023-211.589023c21.61018-21.61018 50.489928-33.509185 81.322144-33.509185s59.711963 11.899004 81.322144 33.509185c21.61018 21.61018 33.509185 50.489928 33.509185 81.322144s-11.899004 59.711963-33.509185 81.322144l-150.180418 150.182464c-11.720949 11.718903-11.720949 30.722722 0 42.441625 11.718903 11.718903 30.722722 11.718903 42.441625 0l150.180418-150.182464c32.946366-32.94432 51.089585-76.898391 51.089585-123.763768C965.026864 190.226482 946.882622 146.272411 913.937279 113.328092z" p-id="2612" fill="#225ed2"></path></svg>'
                 }
             ],
             "pipeline_run_button": [
                 {
                     "name": "提交",
-                    "action_url": "/us_pipeline_modelview/run_us_pipeline/%s"%pipeline.id
+                    "action_url": "/etl_pipeline_modelview/run_etl_pipeline/%s"%pipeline.id
                 }
             ],
             "dag_json":back_dag_json,
@@ -493,7 +493,7 @@ class US_Pipeline_ModelView_Base():
                     "item_type": "str",
                     "label": "资源组",
                     "require": 1,
-                    "choice": [item for item in APPGROUP_INFO],  # 在util/us_api_impl.py
+                    "choice": [item for item in APPGROUP_INFO],
                     "range": "",
                     "default": [item for item in APPGROUP_INFO][0],
                     "placeholder": "",
@@ -560,7 +560,7 @@ class US_Pipeline_ModelView_Base():
                     "template_name": "已存在任务",
                     "templte_ui_config": {
                         "参数": {
-                            "us_task_id": {
+                            "etl_task_id": {
                                 "type": "str",
                                 "item_type": "str",
                                 "label": "已存在任务的us task id",
@@ -581,7 +581,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "绑定任务",
                     "describe": "绑定已存在任务，类似于创建软链接",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -611,7 +611,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "xx平台任务流",
                     "describe": "绑定xx平台任务流，类似于创建软链接。用于创建依赖。",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -783,7 +783,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "hdfs入库至hive任务",
                     "describe": "hdfs入库至hive任务",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -883,7 +883,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "hive出库至hdfs任务",
                     "describe": "hive出库至hdfs任务",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -941,7 +941,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "hdfs导入cos/oss/obs",
                     "describe": "hdfs导入cos/oss/obs，基于us的调用shell脚本任务类型实现",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -999,7 +999,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "cos/oss/obs导入hdfs",
                     "describe": "cos/oss/obs导入hdfs，基于us的调用shell脚本任务类型实现",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -1193,7 +1193,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "SparkScala",
                     "describe": "SparkScala计算",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -1267,7 +1267,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "sql执行",
                     "describe": "sql执行",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -1454,7 +1454,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "pyspark",
                     "describe": "pyspark脚本执行",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -1556,7 +1556,7 @@ class US_Pipeline_ModelView_Base():
                     "created_on": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     "label": "模板测试",
                     "describe": "模板测试",
-                    "help_url": conf.get('HELP_URL', {}).get('us_pipeline', ''),
+                    "help_url": conf.get('HELP_URL', {}).get('etl_pipeline', ''),
                     "pass_through": {
                         # 无论什么内容  通过task的字段透传回来
                     }
@@ -1596,7 +1596,7 @@ class US_Pipeline_ModelView_Base():
                 return user_fun(*args, **kwargs)
 
             join_projects_id = security_manager.get_join_projects_id(db.session)
-            pipeline = db.session.query(US_Pipeline).filter_by(id=pipeline_id).first()
+            pipeline = db.session.query(ETL_Pipeline).filter_by(id=pipeline_id).first()
             if pipeline.project.id in join_projects_id:
                 return user_fun(*args, **kwargs)
 
@@ -1608,16 +1608,16 @@ class US_Pipeline_ModelView_Base():
 
 
     # # @event_logger.log_this
-    @expose("/run_us_pipeline/<us_pipeline_id>", methods=["GET", "POST"])
+    @expose("/run_etl_pipeline/<etl_pipeline_id>", methods=["GET", "POST"])
     # @check_pipeline_perms
-    def run_us_pipeline(self,us_pipeline_id):
-        print(us_pipeline_id)
-        url = '/us_pipeline_modelview/web/' + us_pipeline_id
+    def run_etl_pipeline(self,etl_pipeline_id):
+        print(etl_pipeline_id)
+        url = '/etl_pipeline_modelview/web/' + etl_pipeline_id
         try:
-            pipeline = db.session.query(US_Pipeline).filter_by(id=us_pipeline_id).first()
+            pipeline = db.session.query(ETL_Pipeline).filter_by(id=etl_pipeline_id).first()
             # run_pipeline(pipeline)
             db.session.commit()
-            url = conf.get('MODEL_URLS',{}).get('us_task')
+            url = conf.get('MODEL_URLS',{}).get('etl_task')
         except Exception as e:
             flash(str(e),category='warning')
             return self.response(400,**{"status":1,"message":str(e),"result":{}})
@@ -1625,9 +1625,9 @@ class US_Pipeline_ModelView_Base():
         return redirect(url)
 
 
-    @expose("/web/<us_pipeline_id>", methods=["GET"])
-    def web(self,us_pipeline_id):
-        us_pipeline = db.session.query(US_Pipeline).filter_by(id=us_pipeline_id).first()
+    @expose("/web/<etl_pipeline_id>", methods=["GET"])
+    def web(self,etl_pipeline_id):
+        etl_pipeline = db.session.query(ETL_Pipeline).filter_by(id=etl_pipeline_id).first()
 
         # pipeline.dag_json = pipeline.fix_dag_json()
         # pipeline.expand = json.dumps(pipeline.fix_expand(), indent=4, ensure_ascii=False)
@@ -1645,8 +1645,8 @@ class US_Pipeline_ModelView_Base():
         #         print(e)
 
         db.session.commit()
-        print(us_pipeline_id)
-        url = '/static/appbuilder/visonPlus/index.html?pipeline_id=%s'%us_pipeline_id  # 前后端集成完毕，这里需要修改掉
+        print(etl_pipeline_id)
+        url = '/static/appbuilder/visonPlus/index.html?pipeline_id=%s'%etl_pipeline_id  # 前后端集成完毕，这里需要修改掉
         data = {
             "url": url
         }
@@ -1663,14 +1663,14 @@ class US_Pipeline_ModelView_Base():
         new_pipeline.changed_on = datetime.datetime.now()
 
 
-        # 删除其中的每个us_task_id和task_id
+        # 删除其中的每个etl_task_id和task_id
         dag_json = json.loads(pipeline.dag_json) if pipeline.dag_json else {}
         dag_json_new ={}
         for task_name in dag_json:
             new_task_name = task_name
             new_task_name=new_task_name[:new_task_name.rindex('-')+1]+str(int(round(time.time() * 1000)))  # 名称变化
             dag_json_new[new_task_name]=copy.deepcopy(dag_json[task_name])
-            dag_json_new[new_task_name]['us_task_id']=''   # 去除 us 任务  id
+            dag_json_new[new_task_name]['etl_task_id']=''   # 去除 us 任务  id
 
             dag_json_new[new_task_name]['templte_common_ui_config']=self.all_template['templte_common_ui_config']
 
@@ -1722,22 +1722,22 @@ class US_Pipeline_ModelView_Base():
 
 
 
-class US_Pipeline_ModelView(US_Pipeline_ModelView_Base,MyappModelView,DeleteMixin):
-    datamodel = SQLAInterface(US_Pipeline)
+class ETL_Pipeline_ModelView(ETL_Pipeline_ModelView_Base,MyappModelView,DeleteMixin):
+    datamodel = SQLAInterface(ETL_Pipeline)
     # base_order = ("changed_on", "desc")
     # order_columns = ['changed_on']
 
 
-# appbuilder.add_view(US_Pipeline_ModelView,"数据计算",href="/us_pipeline_modelview/list/",icon = 'fa-usb',category = 'data')
-appbuilder.add_view_no_menu(US_Pipeline_ModelView)
+# appbuilder.add_view(ETL_Pipeline_ModelView,"数据计算",href="/etl_pipeline_modelview/list/",icon = 'fa-usb',category = 'data')
+appbuilder.add_view_no_menu(ETL_Pipeline_ModelView)
 
 
 # 添加api
-class US_Pipeline_ModelView_Api(US_Pipeline_ModelView_Base,MyappModelRestApi):
-    datamodel = SQLAInterface(US_Pipeline)
-    route_base = '/us_pipeline_modelview/api'
+class ETL_Pipeline_ModelView_Api(ETL_Pipeline_ModelView_Base,MyappModelRestApi):
+    datamodel = SQLAInterface(ETL_Pipeline)
+    route_base = '/etl_pipeline_modelview/api'
     search_columns=['project','name','describe','dag_json','created_by']
-    # related_views = [US_Task_ModelView_Api, ]
+    # related_views = [ETL_Task_ModelView_Api, ]
 
     spec_label_columns = {
         "dag_json":"全部配置"
@@ -1757,7 +1757,7 @@ class US_Pipeline_ModelView_Api(US_Pipeline_ModelView_Base,MyappModelRestApi):
         flash('此部分仅提供任务流编排能力，管理员自行对接调度Azkaban/Oozie/Airflow/DolphinScheduler/argo等调度平台能力','success')
         return items
 
-appbuilder.add_api(US_Pipeline_ModelView_Api)
+appbuilder.add_api(ETL_Pipeline_ModelView_Api)
 
 
 

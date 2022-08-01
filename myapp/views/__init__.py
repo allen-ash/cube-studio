@@ -19,7 +19,7 @@ from . import view_link
 from . import view_metadata
 from . import view_metadata_metric
 from . import view_dimension
-from . import view_us_pipeline
+from . import view_etl_pipeline
 from . import view_sqllab
 from . import view_dataset
 from .log import views 
