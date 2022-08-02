@@ -9,7 +9,7 @@ module.exports = function (app) {
             '/etl_pipeline_modelview'
         ],
         createProxyMiddleware({
-            target: 'http://kubeflow.tke.woa.com',
+            target: 'http://localhost',
             changeOrigin: true,
         })
     );
