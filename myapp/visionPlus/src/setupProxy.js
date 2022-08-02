@@ -6,10 +6,10 @@ module.exports = function (app) {
         [
             '**/api/**',
             '/myapp',
-            '/us_pipeline_modelview'
+            '/etl_pipeline_modelview'
         ],
         createProxyMiddleware({
-            target: 'http://kubeflow.tke.woa.com',
+            target: 'http://localhost',
             changeOrigin: true,
         })
     );
