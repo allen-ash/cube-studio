@@ -83,8 +83,10 @@ cube_studio = [
     'ccr.ccs.tencentyun.com/cube-studio/tfserving:2.6.0-gpu',
     'ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.12-py3',
     'ccr.ccs.tencentyun.com/cube-studio/tritonserver:21.09-py3',
-    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.0-cpu',
-    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.0-gpu',
+    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.6.0-cpu',
+    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.6.0-gpu',
+    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.3-cpu',
+    'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.5.3-gpu',
     'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.4.2-cpu',
     'ccr.ccs.tencentyun.com/cube-studio/torchserve:0.4.2-gpu',
     'ccr.ccs.tencentyun.com/cube-studio/onnxruntime:latest',
@@ -134,9 +136,8 @@ cube_studio = [
     'ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda9.1-cudnn7-python3.8',
 ]
 
-images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + volcano + kube_batch + nni+ cube_studio
-# images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + volcano + kube_batch + nni
-# images = new_pipline
+# images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + volcano + kube_batch + nni+ cube_studio
+images = kubeflow + kubernetes_dashboard + new_pipline + new_gpu + new_prometheus + volcano + kube_batch + nni
 images = list(set(images))
 
 # 通过私有仓库，将公有镜像下发到内网每台机器上，例如内网docker.oa.com的仓库
