@@ -1147,6 +1147,45 @@ class K8s():
             print(e)
 
 
+    # @pysnooper.snoop()
+    def create_headless_service(self,namespace,name,username,run_id):
+        svc_metadata = v1_object_meta.V1ObjectMeta(name=name, namespace=namespace, labels={"app":name,'user':username,"run-id":run_id})
+        svc_spec = client.V1ServiceSpec(cluster_ip='None', selector={"app":name,'user':username},type='ClusterIP')
+        service = client.V1Service(api_version='v1', kind='Service', metadata=svc_metadata, spec=svc_spec)
+        print(service.to_dict())
+        try:
+            self.v1.delete_namespaced_service(name, namespace)
+        except Exception as e:
+            pass
+            # print(e)
+        try:
+            service = self.v1.create_namespaced_service(namespace, service)
+        except Exception as e:
+            print(e)
+
+
+    # 创建pod
+    # @pysnooper.snoop()
+    def create_ingress(self,namespace,name,host,username,port):
+        self.v1beta1 = client.ExtensionsV1beta1Api()
+        ingress_metadata = v1_object_meta.V1ObjectMeta(name=name, namespace=namespace, labels={"app":name,'user':username},annotations={"nginx.ingress.kubernetes.io/proxy-connect-timeout":"3000","nginx.ingress.kubernetes.io/proxy-send-timeout":"3000","nginx.ingress.kubernetes.io/proxy-read-timeout":"3000","nginx.ingress.kubernetes.io/proxy-body-size":"1G"})
+        backend = client.ExtensionsV1beta1IngressBackend(service_name=name,service_port=port)
+        path = client.ExtensionsV1beta1HTTPIngressPath(backend=backend,path='/')
+        http = client.ExtensionsV1beta1HTTPIngressRuleValue(paths=[path])
+        rule = client.ExtensionsV1beta1IngressRule(host=host, http=http)
+        ingress_spec = client.ExtensionsV1beta1IngressSpec(rules=[rule])
+        ingress = client.ExtensionsV1beta1Ingress(api_version='extensions/v1beta1', kind='Ingress', metadata=ingress_metadata, spec=ingress_spec)
+        print(ingress.to_dict())
+        try:
+            self.v1beta1.delete_namespaced_ingress(name = name,namespace= namespace)
+        except Exception as e:
+            print(e)
+
+        try:
+            ingress = self.v1beta1.create_namespaced_ingress(namespace = namespace, body=ingress)
+        except Exception as e:
+            print(e)
+
 
     #
     def delete_istio_ingress(self,namespace,name):
@@ -1649,16 +1688,10 @@ def check_status_time(status,hour=8):
 
     return status
 
-
+#
 # if __name__=='__main__':
 #     k8s_client = K8s(file_path='~/.kube/config')
-#     deployment = k8s_client.AppsV1Api.read_namespaced_deployment(name='serving-test-202204022',namespace='service')
-#     ready_replicas = deployment.status.ready_replicas
-#     replicas = deployment.status.replicas
-#     print(ready_replicas,replicas)
-
-
-
+#
 
 
 
