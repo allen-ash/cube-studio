@@ -118,7 +118,7 @@ class Docker_ModelView_Base():
         ),
         "base_image":StringField(
             _(datamodel.obj.lab('base_image')),
-            default='ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.0.3-cudnn8',
+            default='',
             description=Markup(f'基础镜像和构建方法可参考：<a href="%s">点击打开</a>'%(conf.get('HELP_URL').get('docker',''))),
             widget=BS3TextFieldWidget()
         ),
@@ -135,10 +135,10 @@ class Docker_ModelView_Base():
     def pre_add_get(self,docker=None):
         self.add_form_extra_fields['target_image']=StringField(
             _(self.datamodel.obj.lab('target_image')),
-            default=conf.get('REPOSITORY_ORG')+g.user.username+":xx",
-            description="目标镜像名，必须为%s%s:xxx"%(conf.get('REPOSITORY_ORG'),g.user.username),
+            default=conf.get('REPOSITORY_ORG')+g.user.username+":"+datetime.datetime.now().strftime('%Y.%m.%d'+".1"),
+            description="目标镜像名，将直接推送到目标目标仓库",
             widget=BS3TextFieldWidget(),
-            validators=[DataRequired(),Regexp("^%s%s:"%(conf.get('REPOSITORY_ORG'),g.user.username))]
+            validators=[DataRequired(),]
         )
         # # if g.user.is_admin():
         # self.edit_columns=['describe','base_image','target_image','need_gpu','consecutive_build']
@@ -225,9 +225,9 @@ class Docker_ModelView_Base():
             try_num=try_num-1
             time.sleep(2)
         if try_num==0:
-            message='启动时间过长，一分钟后重试'
+            message='拉取镜像时间过长，一分钟后刷新此页面'
             flash(message,'warning')
-            return self.response(400,**{"message":message,"status":1,"result":{}})
+            return self.response(400,**{"message":message,"status":1,"result":pod['status_more']})
             # return redirect(conf.get('MODEL_URLS',{}).get('docker',''))
 
         flash('镜像调试只安装环境，请不要运行业务代码。当晚前请注意保存镜像','warning')

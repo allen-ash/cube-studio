@@ -93,6 +93,7 @@ class Job_Template_ModelView_Base():
         "name_title":{"type": "ellip2", "width": 300},
         "name": {"type": "ellip2", "width": 400},
         "version": {"type": "ellip2", "width": 100},
+        "modified": {"type": "ellip2", "width": 200},
     }
     show_columns = ['project','name','version','describe','images_url','workdir','entrypoint','args_html','demo_html','env','hostAliases','privileged','expand_html']
     add_columns = ['project','images','name','version','describe','workdir','entrypoint','volume_mount','job_args_definition','args','env','hostAliases','privileged','accounts','demo','expand']

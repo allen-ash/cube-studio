@@ -85,7 +85,7 @@ def init():
         print(e)
 
 
-    def create_template(repository_id,project_name,image_name,image_describe,job_template_name,job_template_describe='',job_template_command='',job_template_args=None,job_template_volume='',job_template_account='',job_template_expand=None,job_template_env=''):
+    def create_template(repository_id,project_name,image_name,image_describe,job_template_name,job_template_describe='',job_template_command='',job_template_args=None,job_template_volume='',job_template_account='',job_template_expand=None,job_template_env='',gitpath=''):
         if not repository_id:
             return
         images = db.session.query(Images).filter_by(name=image_name).first()
@@ -99,6 +99,7 @@ def init():
                 images.changed_by_fk=1
                 images.project_id=project.id
                 images.repository_id=repository_id
+                images.gitpath = gitpath
                 db.session.add(images)
                 db.session.commit()
                 print('add images %s' % image_name)

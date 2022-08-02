@@ -167,7 +167,7 @@ class Service_ModelView_base():
     def clear(self, service_id):
         service = db.session.query(Service).filter_by(id=service_id).first()
         self.delete_old_service(service.name,service.project.cluster)
-        flash('服务清理完成', category='warning')
+        flash('服务清理完成', category='success')
         return redirect(conf.get('MODEL_URLS',{}).get('service',''))
 
 
@@ -322,7 +322,7 @@ class Service_ModelView_base():
         # # return crd
 
 
-        flash('服务部署完成',category='warning')
+        flash('服务部署完成',category='success')
         return redirect(conf.get("MODEL_URLS",{}).get("service",'/'))
 
 

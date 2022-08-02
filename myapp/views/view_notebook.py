@@ -148,7 +148,7 @@ class Notebook_ModelView_Base():
             description=_(r'notebook基础环境镜像，如果显示不准确，请删除新建notebook'),
             widget=MySelect2Widget(extra_classes="readonly" if notebook else None,new_web=False,can_input=True),
             choices=[[x[0],x[0]] for x in conf.get('NOTEBOOK_IMAGES',[])],
-            # validators=[DataRequired()]
+            validators=[DataRequired()]
         )
         self.add_form_extra_fields['node_selector'] = StringField(
             _(self.datamodel.obj.lab('node_selector')),
