@@ -118,7 +118,7 @@ class Docker_ModelView_Base():
         ),
         "base_image":StringField(
             _(datamodel.obj.lab('base_image')),
-            default='ccr.ccs.tencentyun.com/cube-studio/ubuntu-gpu:cuda11.0.3-cudnn8-python3.8',
+            default='',
             description=Markup(f'基础镜像和构建方法可参考：<a href="%s">点击打开</a>'%(conf.get('HELP_URL').get('docker',''))),
             widget=BS3TextFieldWidget()
         ),
