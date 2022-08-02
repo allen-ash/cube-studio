@@ -1256,6 +1256,7 @@ class MyappModelRestApi(ModelRestApi):
                 db.session.commit()
                 result.append('success')
             except Exception as e:
+                db.session.rollback()
                 print(e)
                 result.append('fail')
 

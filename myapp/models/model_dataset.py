@@ -61,9 +61,9 @@ class Dataset(Model,AuditMixinNullable,MyappModelBase):
     status = Column(String(200), nullable=True, default='')  # 文件类型  有待校验，已下线
 
     years = Column(String(200), nullable=True)  # 年份
-    url  = Column(String(400),nullable=True)  # 关联url
+    url  = Column(String(1000),nullable=True)  # 关联url
     path = Column(String(400),nullable=True)  # 本地的持久化路径
-    download_url = Column(String(400),nullable=True)  # 下载地址
+    download_url = Column(String(1000),nullable=True)  # 下载地址
     storage_size = Column(String(200), nullable=True,default='')  # 存储大小
     entries_num = Column(String(200), nullable=True, default='')  # 记录数目
     duration = Column(String(200), nullable=True, default='')  # 时长
