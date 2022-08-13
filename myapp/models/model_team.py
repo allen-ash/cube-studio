@@ -20,7 +20,7 @@ from myapp.models.helpers import AuditMixinNullable, ImportMixin
 from sqlalchemy.orm import backref, relationship
 from myapp.models.base import MyappModelBase
 from myapp.models.helpers import ImportMixin
-# 添加自定义model
+
 from sqlalchemy import Column, Integer, String, ForeignKey ,Date,DateTime
 from flask_appbuilder.models.decorators import renders
 from flask import Markup
@@ -38,7 +38,7 @@ class Project(Model,AuditMixinNullable,MyappModelBase):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     describe = Column(String(500), nullable=False)
-    type = Column(String(50))   # 项目类型。组织架构项目组，功能项目组
+    type = Column(String(50))   # org, job_template, model
     expand = Column(Text(65536), default='{}')
 
     export_children = ["user"]

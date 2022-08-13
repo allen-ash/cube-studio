@@ -10,11 +10,10 @@ import uuid
 import re
 from kfp import compiler
 from sqlalchemy.exc import InvalidRequestError
-# 将model添加成视图，并控制在前端的显示
 from myapp.models.model_job import Repository,Images
 from myapp.views.view_team import Project_Filter
 from myapp import app, appbuilder,db,event_logger
-
+from wtforms.validators import DataRequired, Length, NumberRange, Optional,Regexp
 from wtforms import BooleanField, IntegerField,StringField, SelectField,FloatField,DateField,DateTimeField,SelectMultipleField,FormField,FieldList
 
 from flask_appbuilder.fieldwidgets import BS3TextFieldWidget,BS3PasswordFieldWidget,DatePickerWidget,DateTimePickerWidget,Select2ManyWidget,Select2Widget
@@ -38,7 +37,6 @@ from flask import (
     url_for,
 )
 from myapp import security_manager
-import kfp    # 使用自定义的就要把pip安装的删除了
 from werkzeug.datastructures import FileStorage
 from .base import (
     api,
@@ -62,13 +60,13 @@ logging = app.logger
 
 
 
-# 定义数据库视图
+
 class Repository_ModelView_Base():
     datamodel = SQLAInterface(Repository)
 
     label_title='仓库'
     check_redirect_list_url = conf.get('MODEL_URLS',{}).get('repository','')
-    base_permissions = ['can_add', 'can_edit', 'can_delete', 'can_list', 'can_show']  # 默认为这些
+    base_permissions = ['can_add', 'can_edit', 'can_delete', 'can_list', 'can_show']
     base_order = ('id', 'desc')
     order_columns = ['id']
     list_columns = ['name','hubsecret','creator','modified']
@@ -81,9 +79,21 @@ class Repository_ModelView_Base():
     edit_columns = add_columns
 
     add_form_extra_fields = {
+        "server": StringField(
+            _(datamodel.obj.lab('server')),
+            widget=BS3TextFieldWidget(),
+            default='harbor.oa.com',
+            description="镜像仓库服务地址"
+        ),
+        "user": StringField(
+            _(datamodel.obj.lab('user')),
+            widget=BS3TextFieldWidget(),
+            description="镜像仓库的用户名"
+        ),
         "password": StringField(
             _(datamodel.obj.lab('password')),
-            widget=BS3TextFieldWidget()  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=BS3TextFieldWidget(),
+            description="镜像仓库的链接密码"
         )
     }
 
@@ -94,18 +104,21 @@ class Repository_ModelView_Base():
         self.add_form_extra_fields['name'] = StringField(
             _(self.datamodel.obj.lab('name')),
             default=g.user.username+"-",
-            widget=BS3TextFieldWidget()  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=BS3TextFieldWidget(),
+            description = "仓库名称"
         )
 
         self.add_form_extra_fields['hubsecret'] = StringField(
             _(self.datamodel.obj.lab('hubsecret')),
-            default=g.user.username + "-",
-            widget=BS3TextFieldWidget()  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            default=g.user.username + "-hubsecret",
+            widget=BS3TextFieldWidget(),
+            description="在k8s中创建的hub secret",
+            validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54),DataRequired()]
         )
 
     pre_add_get = set_column
 
-    # 直接创建hubsecret
+    # create hubsecret
     # @pysnooper.snoop()
     def apply_hubsecret(self,hubsecret):
         from myapp.utils.py.py_k8s import K8s
@@ -132,10 +145,9 @@ class Repository_ModelView_Base():
 # class Repository_ModelView(Repository_ModelView_Base,MyappModelView,DeleteMixin):
 #     datamodel = SQLAInterface(Repository)
 #
-# # 添加视图和菜单
 # appbuilder.add_view(Repository_ModelView,"仓库",icon = 'fa-shopping-basket',category = '训练',category_icon = 'fa-sitemap')
 
-# 添加api
+
 class Repository_ModelView_Api(Repository_ModelView_Base,MyappModelRestApi):
     datamodel = SQLAInterface(Repository)
 
@@ -158,8 +170,6 @@ class Images_Filter(MyappFilter):
         return result
 
 
-
-# 定义数据库视图
 class Images_ModelView_Base():
     label_title='镜像'
     datamodel = SQLAInterface(Images)
@@ -178,22 +188,22 @@ class Images_ModelView_Base():
         "dockerfile": StringField(
             _(datamodel.obj.lab('dockerfile')),
             description='镜像的构建Dockerfile全部内容',
-            widget=MyBS3TextAreaFieldWidget(rows=10),  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=MyBS3TextAreaFieldWidget(rows=10),
         ),
         "name": StringField(
             _(datamodel.obj.lab('name')),
             description='镜像名称全称，例如ubuntu:20.04',
-            widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=BS3TextFieldWidget(),
         ),
         "entrypoint": StringField(
             _(datamodel.obj.lab('entrypoint')),
             description='镜像的入口命令，直接写成单行字符串，例如python xx.py，无需添加[]',
-            widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
+            widget=BS3TextFieldWidget(),
         )
     }
 
     edit_form_extra_fields = add_form_extra_fields
-    base_filters = [["id", Images_Filter, lambda: []]]  # 设置权限过滤器
+    base_filters = [["id", Images_Filter, lambda: []]]
 
 
 
@@ -203,7 +213,6 @@ class Images_ModelView(Images_ModelView_Base,MyappModelView,DeleteMixin):
 appbuilder.add_view(Images_ModelView,"模板镜像",href="/images_modelview/list/?_flt_2_name=",icon = 'fa-file-image-o',category = '训练')
 
 
-# 添加api
 class Images_ModelView_Api(Images_ModelView_Base,MyappModelRestApi):
     datamodel = SQLAInterface(Images)
     route_base = '/images_modelview/api'
@@ -211,7 +220,3 @@ class Images_ModelView_Api(Images_ModelView_Base,MyappModelRestApi):
 
 appbuilder.add_api(Images_ModelView_Api)
 
-
-
-
-appbuilder.add_separator("训练")   # 在指定菜单栏下面的每个子菜单中间添加一个分割线的显示。

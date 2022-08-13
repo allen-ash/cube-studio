@@ -17,7 +17,6 @@ import re,os
 from wtforms.validators import DataRequired, Length, NumberRange, Optional,Regexp
 from kfp import compiler
 from sqlalchemy.exc import InvalidRequestError
-# 将model添加成视图，并控制在前端的显示
 from myapp import app, appbuilder,db,event_logger
 from myapp.utils import core
 from wtforms import BooleanField, IntegerField,StringField, SelectField,FloatField,DateField,DateTimeField,SelectMultipleField,FormField,FieldList
@@ -302,13 +301,10 @@ class Metadata_table_ModelView_Api(Metadata_table_ModelView_base,MyappModelRestA
             if storage_cost:
                 item['storage_cost']=round(float(storage_cost), 6)
 
-
     # # 在info信息中添加特定参数
     # @pysnooper.snoop()
     def add_more_info(self,response,**kwargs):
-
         pass
-
 
     remember_columns=['app','db']
     label_title='hive库表'

@@ -22,7 +22,7 @@ from myapp.models.helpers import AuditMixinNullable, ImportMixin
 from flask import escape, g, Markup, request
 from myapp import app,db
 from myapp.models.helpers import ImportMixin
-# 添加自定义model
+
 from sqlalchemy import Column, Integer, String, ForeignKey ,Date,DateTime
 from flask_appbuilder.models.decorators import renders
 from flask import Markup
@@ -31,7 +31,7 @@ metadata = Model.metadata
 conf = app.config
 
 
-# 定义model
+
 class NNI(Model,AuditMixinNullable,MyappModelBase):
     __tablename__ = 'nni'
     id = Column(Integer, primary_key=True)
@@ -103,7 +103,7 @@ class NNI(Model,AuditMixinNullable,MyappModelBase):
         if NNI_DOMAIN:
             host = "http://"+NNI_DOMAIN
         else:
-            host = "http://"+request.host # 使用当前域名打开
+            host = request.host_url.strip('/') # 使用当前域名打开
 
         return Markup(f'<a target=_blank href="{host}/nni/{self.name}/">{self.describe}</a>')
 
