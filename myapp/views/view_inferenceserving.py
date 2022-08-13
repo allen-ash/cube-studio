@@ -172,6 +172,7 @@ class InferenceService_ModelView_base():
 
         'service_type': SelectField(
             _(datamodel.obj.lab('service_type')),
+            default='serving',
             description="推理框架类型",
             widget=MySelect2Widget(new_web=True),
             choices=[[x, x] for x in service_type_choices],
@@ -262,7 +263,7 @@ class InferenceService_ModelView_base():
     # edit_form_extra_fields['name']=StringField(_(datamodel.obj.lab('name')), description='英文名(字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
 
 
-    # @pysnooper.snoop()
+    @pysnooper.snoop()
     def set_column(self, service=None):
         # 对编辑进行处理
         request_data = request.args.to_dict()
@@ -570,7 +571,7 @@ output %s
         '''%(item.model_name,plat_form[model_type],self.input_demo,self.output_demo,parameters)
         return config_str
 
-    # @pysnooper.snoop(watch_explode=('item'))
+    @pysnooper.snoop(watch_explode=('item'))
     def use_expand(self, item):
 
         item.ports = conf.get('INFERNENCE_PORTS',{}).get(item.service_type,item.ports)
@@ -582,7 +583,7 @@ output %s
         expand = json.loads(item.expand) if item.expand else {}
         print(self.src_item_json)
         model_version = item.model_version.replace('v','').replace('.','').replace(':','')
-        model_path = "/"+item.model_path.strip('/')
+        model_path = "/"+item.model_path.strip('/') if item.model_path else ''
         # 对网络地址先同一在命令中下载
         download_command=''
         if 'http:' in item.model_path or 'https:' in item.model_path:
@@ -696,12 +697,14 @@ output %s
 
 
 
-    # @pysnooper.snoop()
+    @pysnooper.snoop()
     def pre_add(self, item):
-
+        if not item.model_path:
+            item.model_path=''
         if not item.volume_mount:
             item.volume_mount=item.project.volume_mount
         self.use_expand(item)
+
 
         if ('http:' in item.model_path or 'https:' in item.model_path) and ('.zip' in item.model_path or '.tar.gz' in item.model_path):
             try:
