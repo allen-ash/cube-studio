@@ -226,6 +226,17 @@ def delete_workflow(task):
 
     time.sleep(10)
 
+    mxjob_info = conf.get("CRD_INFO", {}).get('mxjob', {})
+    print(mxjob_info)
+    if mxjob_info:
+        try:
+            delete_old_crd(mxjob_info)
+        except Exception as e:
+            print(e)
+
+    time.sleep(10)
+
+
     # # 删除framework
     # framework_info = conf.get("CRD_INFO", {}).get('framework', {})
     # print(framework_info)

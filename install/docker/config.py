@@ -683,6 +683,13 @@ CRD_INFO={
         'kind': 'PaddleJob',
         "plural": "paddlejobs",
         "timeout": 60 * 60 * 24 * 2
+    },
+    "mxjob":{
+        "group": "kubeflow.org",
+        "version": "v1",
+        'kind': 'MXJob',
+        "plural": "mxjobs",
+        "timeout": 60 * 60 * 24 * 2
     }
 }
 

@@ -111,7 +111,7 @@ class Job_Template_ModelView_Base():
     add_form_extra_fields = {
         "name": StringField(
             _(datamodel.obj.lab('name')),
-            description='英文名(字母、数字、- 组成)，最长50个字符',
+            description='英文名(小写字母、数字、- 组成)，最长50个字符',
             default='',
             widget=BS3TextFieldWidget(),  # 传给widget函数的是外层的field对象，以及widget函数的参数
             validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]

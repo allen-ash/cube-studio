@@ -44,8 +44,8 @@ INIT_FILE=''
 crd_info={
     "group": "kubeflow.org",
     "version": "v1",
-    'kind': 'PyTorchJob',
-    "plural": "pytorchjobs",
+    'kind': 'MXJob',
+    "plural": "mxjobs",
     "timeout": 60 * 60 * 24 * 2
 }
 
@@ -62,7 +62,7 @@ print(GPU_TYPE,GPU_RESOURCE)
 
 
 def default_job_name():
-    name = "pytorchjob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
+    name = "mxjob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
     return name[0:54]
 
 
@@ -96,7 +96,7 @@ def run_shell(shell):
 
 
 
-# 监控指定名称的pytorchjob
+# 监控指定名称的mxjob
 def monitoring(crd_k8s,name,namespace):
     time.sleep(10)
     # 杀掉stern 进程
@@ -114,12 +114,12 @@ def monitoring(crd_k8s,name,namespace):
         return back
     check_time = datetime.datetime.now()
     while(True):
-        pytorchjob = crd_k8s.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=namespace,name=name)
-        if pytorchjob:
-            print('pytorchjob status %s'%pytorchjob['status'], flush=True)
+        mxjob = crd_k8s.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=namespace,name=name)
+        if mxjob:
+            print('mxjob status %s'%mxjob['status'], flush=True)
         else:
-            print('pytorchjob not exist', flush=True)
-        if pytorchjob and (pytorchjob['status']=="Succeeded" or pytorchjob['status']=="Failed"):    # Created, Running, Restarting, Succeeded, or Failed
+            print('mxjob not exist', flush=True)
+        if mxjob and (mxjob['status']=="Succeeded" or mxjob['status']=="Failed"):    # Created, Running, Restarting, Succeeded, or Failed
             pids = get_pid("stern")
             if pids:
                 for pid in pids:
@@ -140,10 +140,7 @@ def monitoring(crd_k8s,name,namespace):
 
 
 # @pysnooper.snoop()
-def make_pytorchjob(name,num_workers,image,working_dir,command):
-    # if type(command)==str:
-    #     command=command.split(" ")
-    #     command = [c for c in command if c]
+def make_mxjob(name,num_ps,num_workers,image,working_dir,command):
     pod_spec={
         "replicas": 1,
         "restartPolicy": "Never",
@@ -156,19 +153,19 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                     "task-name": KFJ_TASK_NAME,
                     'rtx-user': KFJ_RUNNER,
                     "component": name,
-                    "type": "pytorchjob",
+                    "type": "mxjob",
                     "run-id": KFJ_RUN_ID,
                 }
             },
             "spec": {
-                "schedulerName": "kube-batch",
+                # "schedulerName": "kube-batch",
                 "restartPolicy": "Never",
                 "volumes": k8s_volumes,
-                # "imagePullSecrets": [
-                #     {
-                #         "name": "hubsecret"
-                #     }
-                # ],
+                "imagePullSecrets": [
+                    {
+                        "name": "hubsecret"
+                    }
+                ],
                 "affinity": {
                     "nodeAffinity": {
                         "requiredDuringSchedulingIgnoredDuringExecution": {
@@ -196,7 +193,7 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                                     "labelSelector": {
                                         "matchLabels": {
                                             "component": name,
-                                            "type": "pytorchjob"
+                                            "type": "mxjob"
                                         }
                                     }
                                 }
@@ -206,28 +203,10 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                 },
                 "containers": [
                     {
-                        "name": "pytorch",
+                        "name": "mxnet",
                         "image": image if image else KFJ_TASK_IMAGES,
                         "imagePullPolicy": "Always",
                         "workingDir":working_dir,
-                        "env":[
-                            {
-                                "name": "NCCL_DEBUG",
-                                "value":"INFO"
-                            },
-                            {
-                                "name": "NCCL_IB_DISABLE",
-                                "value": "1"
-                            },
-                            # {
-                            #     "name": "NCCL_DEBUG_SUBSYS",
-                            #     "value": "ALL"
-                            # },
-                            {
-                                "name": "NCCL_SOCKET_IFNAME",
-                                "value": "eth0"
-                            }
-                        ],
                         "command": ['bash','-c',command],
                         "volumeMounts": k8s_volume_mounts,
                         "resources": {
@@ -252,11 +231,28 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
         pod_spec['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = GPU_RESOURCE.split(',')[0]
 
     worker_pod_spec = copy.deepcopy(pod_spec)
-    worker_pod_spec['replicas']=int(num_workers)-1   # 因为master是其中一个worker
+    worker_pod_spec['replicas']=int(num_workers)
 
-    pytorch_deploy = {
+    scheduler_pod_spec={
+        "replicas": 1,
+        "restartPolicy": "Never",
+        "template": {
+            "spec": {
+                "containers": [
+                    {
+                        "name": "mxnet",
+                        "image": image
+                    }
+                ]
+            }
+        }
+    }
+    server_pod_spec = copy.deepcopy(scheduler_pod_spec)
+    server_pod_spec['replicas']=int(num_ps)
+
+    mx_deploy = {
         "apiVersion": "kubeflow.org/v1",
-        "kind": "PyTorchJob",
+        "kind": "MXJob",
         "metadata": {
             "namespace": KFJ_NAMESPACE,
             "name": name,
@@ -271,32 +267,33 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
             }
         },
         "spec": {
-            "backoffLimit":num_workers,
+            "jobMode":'MXTrain',
             "cleanPodPolicy": "None",
-            "pytorchReplicaSpecs": {
-                "Master":pod_spec,
+            "mxReplicaSpecs": {
+                "Scheduler":scheduler_pod_spec,
+                "Server":server_pod_spec,
                 "Worker":worker_pod_spec
             }
 
         }
     }
 
-    return pytorch_deploy
+    return mx_deploy
 
 
 # @pysnooper.snoop()
-def launch_pytorchjob(name, num_workers, image,working_dir, worker_command):
+def launch_mxjob(name, num_ps,num_workers, image,working_dir, worker_command):
     if KFJ_RUN_ID:
-        print('delete old pytorch, run-id %s'%KFJ_RUN_ID, flush=True)
+        print('delete old mx, run-id %s'%KFJ_RUN_ID, flush=True)
         k8s_client.delete_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,labels={"run-id":KFJ_RUN_ID})
         time.sleep(10)
-    # 删除旧的pytorch
+    # 删除旧的mx
     k8s_client.delete_crd(group=crd_info['group'], version=crd_info['version'], plural=crd_info['plural'],namespace=KFJ_NAMESPACE, name=name)
     time.sleep(10)
-    # 创建新的pytorch
-    pytorchjob_json = make_pytorchjob(name=name,num_workers= num_workers,image = image,working_dir=working_dir,command=worker_command)
-    print('create new pytorch %s' % name, flush=True)
-    k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=pytorchjob_json)
+    # 创建新的mx
+    mxjob_json = make_mxjob(name=name,num_ps=num_ps,num_workers= num_workers,image = image,working_dir=working_dir,command=worker_command)
+    print('create new mx %s' % name, flush=True)
+    k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=mxjob_json)
     time.sleep(10)
 
     print('begin start monitoring thread', flush=True)
@@ -307,35 +304,36 @@ def launch_pytorchjob(name, num_workers, image,working_dir, worker_command):
         # 实时打印日志
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
         print('begin follow log\n%s'%line, flush=True)
-        command = '''stern %s --namespace %s --exclude-container init-pytorch --since 10s --template '{{.PodName}} {{.Message}} {{"\\n"}}' '''%(name,KFJ_NAMESPACE)
+        command = '''stern %s --namespace %s --exclude-container init-mx --since 10s --template '{{.PodName}} {{.Message}} {{"\\n"}}' '''%(name,KFJ_NAMESPACE)
 
         print(command, flush=True)
         run_shell(command)
         print('%s\nend follow log'%line, flush=True)
         time.sleep(10)
 
-        pytorchjob = k8s_client.get_one_crd(group=crd_info['group'], version=crd_info['version'],plural=crd_info['plural'], namespace=KFJ_NAMESPACE, name=name)
-        if pytorchjob and (pytorchjob['status'] == "Succeeded" or pytorchjob['status'] == "Failed"):
+        mxjob = k8s_client.get_one_crd(group=crd_info['group'], version=crd_info['version'],plural=crd_info['plural'], namespace=KFJ_NAMESPACE, name=name)
+        if mxjob and (mxjob['status'] == "Succeeded" or mxjob['status'] == "Failed"):
             break
 
-    pytorchjob = k8s_client.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,name=name)
-    print("pytorchJob %s finished, status %s"%(name, pytorchjob['status']))
+    mxjob = k8s_client.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,name=name)
+    print("mxJob %s finished, status %s"%(name, mxjob['status']))
 
-    if pytorchjob['status']!='Succeeded':
+    if mxjob['status']!='Succeeded':
         exit(1)
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser("Pytorchjob launcher")
+    arg_parser = argparse.ArgumentParser("mxjob launcher")
     arg_parser.add_argument('--working_dir', type=str, help="运行job的工作目录", default='/mnt/')
     arg_parser.add_argument('--command', type=str, help="运行job的命令", default='python3 mnist.py')
-    arg_parser.add_argument('--num_worker', type=int, help="分布式worker的数量", default=3)
+    arg_parser.add_argument('--num_ps', type=int, help="运行ps的pod数目", default=0)
+    arg_parser.add_argument('--num_worker', type=int, help="运行worker的pod数目", default=3)
     arg_parser.add_argument('--image', type=str, help="运行job的镜像", default='')
 
     args = arg_parser.parse_args()
     print("{} args: {}".format(__file__, args))
 
 
-    launch_pytorchjob(name=default_job_name(),num_workers=args.num_worker,image=args.image,working_dir=args.working_dir,worker_command=args.command)
+    launch_mxjob(name=default_job_name(),num_ps=int(args.num_ps),num_workers=int(args.num_worker),image=args.image,working_dir=args.working_dir,worker_command=args.command)
 
 

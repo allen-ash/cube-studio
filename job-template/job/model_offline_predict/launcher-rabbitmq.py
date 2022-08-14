@@ -456,7 +456,7 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser("volcanojob launcher")
     arg_parser.add_argument('--working_dir', type=str, help="运行job的工作目录", default='')
     arg_parser.add_argument('--command', type=str, help="运行job的启动命令", default='')
-    arg_parser.add_argument('--num_worker', type=int, help="运行job所在的机器", default=3)
+    arg_parser.add_argument('--num_worker', type=int, help="分布式worker的数量", default=3)
     arg_parser.add_argument('--image', type=str, help="运行job的镜像", default='ubuntu:18.04')
 
     args = arg_parser.parse_args()

@@ -158,7 +158,7 @@ class InferenceService_ModelView_base():
         'model_name': StringField(
             _('模型名称'),
             default='',
-            description='英文名(字母、数字、- 组成)，最长50个字符',
+            description='英文名(小写字母、数字、- 组成)，最长50个字符',
             widget=MyBS3TextFieldWidget(),
             validators=[DataRequired(), Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
         ),
@@ -260,10 +260,10 @@ class InferenceService_ModelView_base():
 
 
     edit_form_extra_fields = add_form_extra_fields
-    # edit_form_extra_fields['name']=StringField(_(datamodel.obj.lab('name')), description='英文名(字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
+    # edit_form_extra_fields['name']=StringField(_(datamodel.obj.lab('name')), description='英文名(小写字母、数字、- 组成)，最长50个字符',widget=MyBS3TextFieldWidget(readonly=True), validators=[Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"),Length(1,54)]),
 
 
-    @pysnooper.snoop()
+    # @pysnooper.snoop()
     def set_column(self, service=None):
         # 对编辑进行处理
         request_data = request.args.to_dict()
@@ -337,7 +337,7 @@ class InferenceService_ModelView_base():
         # self.add_form_extra_fields['name'] = StringField(
         #     _(self.datamodel.obj.lab('name')),
         #     default=g.user.username+"-"+service_type+'-xx-v1',
-        #     description='英文名(字母、数字、- 组成)，最长50个字符',
+        #     description='英文名(小写字母、数字、- 组成)，最长50个字符',
         #     widget=BS3TextFieldWidget(),
         #     validators=[DataRequired(),Regexp("^[a-z][a-z0-9\-]*[a-z0-9]$"), Length(1, 54)]
         # )
@@ -571,7 +571,7 @@ output %s
         '''%(item.model_name,plat_form[model_type],self.input_demo,self.output_demo,parameters)
         return config_str
 
-    @pysnooper.snoop(watch_explode=('item'))
+    # @pysnooper.snoop(watch_explode=('item'))
     def use_expand(self, item):
 
         item.ports = conf.get('INFERNENCE_PORTS',{}).get(item.service_type,item.ports)
@@ -697,7 +697,7 @@ output %s
 
 
 
-    @pysnooper.snoop()
+    # @pysnooper.snoop()
     def pre_add(self, item):
         if not item.model_path:
             item.model_path=''
