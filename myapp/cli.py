@@ -87,7 +87,7 @@ def init():
         print(e)
 
 
-    def create_template(repository_id,project_name,image_name,image_describe,job_template_name,job_template_describe='',job_template_command='',job_template_args=None,job_template_volume='',job_template_account='',job_template_expand=None,job_template_env='',gitpath=''):
+    def create_template(repository_id,project_name,image_name,image_describe,job_template_name,job_template_old_names=[],job_template_describe='',job_template_command='',job_template_args=None,job_template_volume='',job_template_account='',job_template_expand=None,job_template_env='',gitpath=''):
         if not repository_id:
             return
         images = db.session.query(Images).filter_by(name=image_name).first()
@@ -109,8 +109,13 @@ def init():
                 print(e)
                 db.session.rollback()
 
-
         job_template = db.session.query(Job_Template).filter_by(name=job_template_name).first()
+        if not job_template:
+            for old_name in job_template_old_names:
+                job_template = db.session.query(Job_Template).filter_by(name=old_name).first()
+                if job_template:
+                    break
+
         project = db.session.query(Project).filter_by(name=project_name).filter_by(type='job-template').first()
         if project and images.id:
             if job_template is None:
@@ -121,6 +126,7 @@ def init():
                     job_template.entrypoint=job_template_command
                     job_template.volume_mount=job_template_volume
                     job_template.accounts=job_template_account
+                    job_template_expand['source']="github"
                     job_template.expand = json.dumps(job_template_expand,indent=4,ensure_ascii=False) if job_template_expand else '{}'
                     job_template.created_by_fk=1
                     job_template.changed_by_fk=1
@@ -141,6 +147,7 @@ def init():
                     job_template.entrypoint = job_template_command
                     job_template.volume_mount = job_template_volume
                     job_template.accounts = job_template_account
+                    job_template_expand['source'] = "github"
                     job_template.expand = json.dumps(job_template_expand, indent=4,ensure_ascii=False) if job_template_expand else '{}'
                     job_template.created_by_fk = 1
                     job_template.changed_by_fk = 1

@@ -237,7 +237,7 @@
         "job_template_name":"ray",
         "job_template_describe":"python多机分布式任务",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_expand":{
             "index":2,
@@ -444,7 +444,7 @@
         "job_template_name":"ray-sklearn",
         "job_template_describe":"sklearn基于ray的分布式",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true",
         "job_template_expand":{
@@ -802,7 +802,7 @@
         "job_template_name":"tfjob-runner",
         "job_template_describe":"tf分布式-runner方式",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -858,7 +858,7 @@
         "job_template_name":"tfjob-plain",
         "job_template_describe":"tf分布式-plain方式",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -914,7 +914,7 @@
         "job_template_name":"tfjob-train",
         "job_template_describe":"tf分布式训练，内部支持plain和runner两种方式",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -970,7 +970,7 @@
         "job_template_name":"tf-model-evaluation",
         "job_template_describe":"tensorflow2.3模型评估",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -1026,7 +1026,7 @@
         "job_template_name":"tf-distribute-model-evaluation",
         "job_template_describe":"tensorflow2.3分布式模型评估",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -1138,7 +1138,7 @@
         "job_template_name":"tfjob",
         "job_template_describe":"tf 分布式训练",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -1212,9 +1212,10 @@
         "gitpath": "https://github.com/tencentmusic/cube-studio/tree/master/job-template/job/pytorch_distributed_train_k8s",
         "image_describe":"pytorch分布式训练",
         "job_template_name":"pytorchjob",
+        "job_template_old_names": ["pytorchjob-train"],
         "job_template_describe":"pytorch 分布式训练",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=2\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
@@ -1560,9 +1561,10 @@
         "gitpath": "https://github.com/tencentmusic/cube-studio/tree/master/job-template/job/kaldi_distributed_on_volcanojob",
         "image_describe":"kaldi音频分布式",
         "job_template_name":"kaldi",
+        "job_template_old_names": ["kaldi-distributed-on-volcanojob"],
         "job_template_describe":"kaldi音频分布式训练",
         "job_template_command":"",
-        "job_template_volume":"4G(memory):/dev/shm",
+        "job_template_volume":"",
         "job_template_account":"kubeflow-pipeline",
         "job_template_env":"NO_RESOURCE_CHECK=true\nTASK_RESOURCE_CPU=4\nTASK_RESOURCE_MEMORY=4G\nTASK_RESOURCE_GPU=0",
         "job_template_expand":{
