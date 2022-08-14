@@ -42,10 +42,10 @@ KFJ_TASK_RESOURCE_MEMORY = os.getenv('KFJ_TASK_RESOURCE_MEMORY', '')
 NUM_WORKER = 3
 INIT_FILE=''
 crd_info={
-    "group": "kubeflow.org",
+    "group": "batch.paddlepaddle.org",
     "version": "v1",
-    'kind': 'PyTorchJob',
-    "plural": "pytorchjobs",
+    'kind': 'PaddleJob',
+    "plural": "paddlejobs",
     "timeout": 60 * 60 * 24 * 2
 }
 
@@ -62,7 +62,7 @@ print(GPU_TYPE,GPU_RESOURCE)
 
 
 def default_job_name():
-    name = "pytorchjob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
+    name = "paddlejob-" + KFJ_PIPELINE_NAME.replace('_','-')+"-"+uuid.uuid4().hex[:4]
     return name[0:54]
 
 
@@ -96,7 +96,7 @@ def run_shell(shell):
 
 
 
-# 监控指定名称的pytorchjob
+# 监控指定名称的paddlejob
 def monitoring(crd_k8s,name,namespace):
     time.sleep(10)
     # 杀掉stern 进程
@@ -114,12 +114,12 @@ def monitoring(crd_k8s,name,namespace):
         return back
     check_time = datetime.datetime.now()
     while(True):
-        pytorchjob = crd_k8s.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=namespace,name=name)
-        if pytorchjob:
-            print('pytorchjob status %s'%pytorchjob['status'], flush=True)
+        paddlejob = crd_k8s.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=namespace,name=name)
+        if paddlejob:
+            print('paddlejob status %s'%paddlejob['status'], flush=True)
         else:
-            print('pytorchjob not exist', flush=True)
-        if pytorchjob and (pytorchjob['status']=="Succeeded" or pytorchjob['status']=="Failed"):    # Created, Running, Restarting, Succeeded, or Failed
+            print('paddlejob not exist', flush=True)
+        if paddlejob and (paddlejob['status']=="Succeeded" or paddlejob['status']=="Failed" or paddlejob['status']=='Completed'):    # Created, Running, Restarting, Succeeded, or Failed
             pids = get_pid("stern")
             if pids:
                 for pid in pids:
@@ -140,10 +140,7 @@ def monitoring(crd_k8s,name,namespace):
 
 
 # @pysnooper.snoop()
-def make_pytorchjob(name,num_workers,image,working_dir,command):
-    # if type(command)==str:
-    #     command=command.split(" ")
-    #     command = [c for c in command if c]
+def make_paddlejob(name,num_workers,num_ps,image,working_dir,command):
     pod_spec={
         "replicas": 1,
         "restartPolicy": "Never",
@@ -156,19 +153,19 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                     "task-name": KFJ_TASK_NAME,
                     'rtx-user': KFJ_RUNNER,
                     "component": name,
-                    "type": "pytorchjob",
+                    "type": "paddlejob",
                     "run-id": KFJ_RUN_ID,
                 }
             },
             "spec": {
-                "schedulerName": "kube-batch",
+                # "schedulerName": "kube-batch",
                 "restartPolicy": "Never",
                 "volumes": k8s_volumes,
-                # "imagePullSecrets": [
-                #     {
-                #         "name": "hubsecret"
-                #     }
-                # ],
+                "imagePullSecrets": [
+                    {
+                        "name": "hubsecret"
+                    }
+                ],
                 "affinity": {
                     "nodeAffinity": {
                         "requiredDuringSchedulingIgnoredDuringExecution": {
@@ -196,7 +193,7 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                                     "labelSelector": {
                                         "matchLabels": {
                                             "component": name,
-                                            "type": "pytorchjob"
+                                            "type": "paddlejob"
                                         }
                                     }
                                 }
@@ -206,28 +203,10 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
                 },
                 "containers": [
                     {
-                        "name": "pytorch",
+                        "name": "paddle",
                         "image": image if image else KFJ_TASK_IMAGES,
                         "imagePullPolicy": "Always",
                         "workingDir":working_dir,
-                        "env":[
-                            {
-                                "name": "NCCL_DEBUG",
-                                "value":"INFO"
-                            },
-                            {
-                                "name": "NCCL_IB_DISABLE",
-                                "value": "1"
-                            },
-                            # {
-                            #     "name": "NCCL_DEBUG_SUBSYS",
-                            #     "value": "ALL"
-                            # },
-                            {
-                                "name": "NCCL_SOCKET_IFNAME",
-                                "value": "eth0"
-                            }
-                        ],
                         "command": ['bash','-c',command],
                         "volumeMounts": k8s_volume_mounts,
                         "resources": {
@@ -252,11 +231,12 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
         pod_spec['template']['spec']['containers'][0]['resources']['limits']['nvidia.com/gpu'] = GPU_RESOURCE.split(',')[0]
 
     worker_pod_spec = copy.deepcopy(pod_spec)
-    worker_pod_spec['replicas']=int(num_workers)-1   # 因为master是其中一个worker
-
-    pytorch_deploy = {
-        "apiVersion": "kubeflow.org/v1",
-        "kind": "PyTorchJob",
+    worker_pod_spec['replicas']=int(num_workers)
+    ps_pod_spec = copy.deepcopy(pod_spec)
+    ps_pod_spec['replicas']=int(num_ps)
+    paddle_deploy = {
+        "apiVersion": "batch.paddlepaddle.org/v1",
+        "kind": "PaddleJob",
         "metadata": {
             "namespace": KFJ_NAMESPACE,
             "name": name,
@@ -271,32 +251,32 @@ def make_pytorchjob(name,num_workers,image,working_dir,command):
             }
         },
         "spec": {
-            "backoffLimit":num_workers,
-            "cleanPodPolicy": "None",
-            "pytorchReplicaSpecs": {
-                "Master":pod_spec,
-                "Worker":worker_pod_spec
-            }
-
+            # "withGloo":1, # withGloo的可选配置为0不启用，1只启动worker端，2启动所有（worker和server），建议设置1；
+            "intranet":'PodIP',
+            "cleanPodPolicy": "Never",
+            "worker":worker_pod_spec
         }
     }
+    if num_ps:
+        paddle_deploy['spec']['ps']=ps_pod_spec
 
-    return pytorch_deploy
+    return paddle_deploy
 
 
 # @pysnooper.snoop()
-def launch_pytorchjob(name, num_workers, image,working_dir, worker_command):
+def launch_paddlejob(name, num_workers,num_ps, image,working_dir, worker_command):
+
     if KFJ_RUN_ID:
-        print('delete old pytorch, run-id %s'%KFJ_RUN_ID, flush=True)
+        print('delete old paddle, run-id %s'%KFJ_RUN_ID, flush=True)
         k8s_client.delete_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,labels={"run-id":KFJ_RUN_ID})
         time.sleep(10)
-    # 删除旧的pytorch
+    # 删除旧的paddle
     k8s_client.delete_crd(group=crd_info['group'], version=crd_info['version'], plural=crd_info['plural'],namespace=KFJ_NAMESPACE, name=name)
     time.sleep(10)
-    # 创建新的pytorch
-    pytorchjob_json = make_pytorchjob(name=name,num_workers= num_workers,image = image,working_dir=working_dir,command=worker_command)
-    print('create new pytorch %s' % name, flush=True)
-    k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=pytorchjob_json)
+    # 创建新的paddle
+    paddlejob_json = make_paddlejob(name=name,num_workers= num_workers,num_ps=num_ps, image = image,working_dir=working_dir,command=worker_command)
+    print('create new paddle %s' % name, flush=True)
+    k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=paddlejob_json)
     time.sleep(10)
 
     print('begin start monitoring thread', flush=True)
@@ -307,35 +287,36 @@ def launch_pytorchjob(name, num_workers, image,working_dir, worker_command):
         # 实时打印日志
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
         print('begin follow log\n%s'%line, flush=True)
-        command = '''stern %s --namespace %s --exclude-container init-pytorch --since 10s --template '{{.PodName}} {{.Message}} {{"\\n"}}' '''%(name,KFJ_NAMESPACE)
+        command = '''stern %s --namespace %s --exclude-container coord-paddle --since 10s --template '{{.PodName}} {{.Message}} {{"\\n"}}' '''%(name,KFJ_NAMESPACE)
 
         print(command, flush=True)
         run_shell(command)
         print('%s\nend follow log'%line, flush=True)
         time.sleep(10)
 
-        pytorchjob = k8s_client.get_one_crd(group=crd_info['group'], version=crd_info['version'],plural=crd_info['plural'], namespace=KFJ_NAMESPACE, name=name)
-        if pytorchjob and (pytorchjob['status'] == "Succeeded" or pytorchjob['status'] == "Failed"):
+        paddlejob = k8s_client.get_one_crd(group=crd_info['group'], version=crd_info['version'],plural=crd_info['plural'], namespace=KFJ_NAMESPACE, name=name)
+        if paddlejob and (paddlejob['status'] == "Succeeded" or paddlejob['status'] == "Failed" or paddlejob['status'] == "Completed"):
             break
 
-    pytorchjob = k8s_client.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,name=name)
-    print("pytorchJob %s finished, status %s"%(name, pytorchjob['status']))
+    paddlejob = k8s_client.get_one_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,name=name)
+    print("paddleJob %s finished, status %s"%(name, paddlejob['status']))
 
-    if pytorchjob['status']!='Succeeded':
+    if paddlejob['status']!='Succeeded' and paddlejob['status']!="Completed":
         exit(1)
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser("Pytorchjob launcher")
+    arg_parser = argparse.ArgumentParser("Paddlejob launcher")
     arg_parser.add_argument('--working_dir', type=str, help="运行job的工作目录", default='/mnt/')
     arg_parser.add_argument('--command', type=str, help="运行job的命令", default='python3 mnist.py')
-    arg_parser.add_argument('--num_worker', type=int, help="运行job所在的机器", default=3)
+    arg_parser.add_argument('--num_ps', type=int, help="运行ps的pod数目", default=0)
+    arg_parser.add_argument('--num_worker', type=int, help="运行worker的pod数目", default=3)
     arg_parser.add_argument('--image', type=str, help="运行job的镜像", default='')
 
     args = arg_parser.parse_args()
     print("{} args: {}".format(__file__, args))
 
 
-    launch_pytorchjob(name=default_job_name(),num_workers=args.num_worker,image=args.image,working_dir=args.working_dir,worker_command=args.command)
+    launch_paddlejob(name=default_job_name(),num_workers=int(args.num_worker),num_ps=int(args.num_ps),image=args.image,working_dir=args.working_dir,worker_command=args.command)
 
 

@@ -258,10 +258,10 @@ def launch_tfjob(name, num_workers, image,working_dir, worker_command):
     k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=tfjob_json)
     time.sleep(10)
 
-    print('begin start monitoring thred', flush=True)
+    print('begin start monitoring thread', flush=True)
     # # 后台启动监控脚本
-    monitoring_thred = threading.Thread(target=monitoring,args=(k8s_client,name,KFJ_NAMESPACE))
-    monitoring_thred.start()
+    monitoring_thread = threading.Thread(target=monitoring,args=(k8s_client,name,KFJ_NAMESPACE))
+    monitoring_thread.start()
     while True:
         # 实时打印日志
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'

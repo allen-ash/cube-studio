@@ -676,6 +676,13 @@ CRD_INFO={
         'kind': 'SparkApplication',
         "plural": "sparkapplications",
         "timeout": 60 * 60 * 24 * 2
+    },
+    "paddlejob":{
+        "group": "batch.paddlepaddle.org",
+        "version": "v1",
+        'kind': 'PaddleJob',
+        "plural": "paddlejobs",
+        "timeout": 60 * 60 * 24 * 2
     }
 }
 

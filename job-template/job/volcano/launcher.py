@@ -307,10 +307,10 @@ def launch_volcanojob(name, num_workers, image,working_dir, worker_command):
     k8s_client.create_crd(group=crd_info['group'],version=crd_info['version'],plural=crd_info['plural'],namespace=KFJ_NAMESPACE,body=volcanojob_json)
     time.sleep(10)
 
-    print('begin start monitoring thred', flush=True)
+    print('begin start monitoring thread', flush=True)
     # # 后台启动监控脚本
-    monitoring_thred = threading.Thread(target=monitoring,args=(k8s_client,name,KFJ_NAMESPACE))
-    monitoring_thred.start()
+    monitoring_thread = threading.Thread(target=monitoring,args=(k8s_client,name,KFJ_NAMESPACE))
+    monitoring_thread.start()
     while True:
         # 实时打印日志,由于stern跟踪时长有限制，所以会每个小时重启一次ster进程
         line='>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
