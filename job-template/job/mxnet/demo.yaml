@@ -2,7 +2,10 @@ apiVersion: "kubeflow.org/v1"
 kind: "MXJob"
 metadata:
   name: "mxnet-job"
+  namespace: pipeline
 spec:
+  runPolicy:
+    cleanPodPolicy: None
   jobMode: MXTrain
   mxReplicaSpecs:
     Scheduler:
@@ -34,3 +37,6 @@ spec:
               resources:
                 limits:
                   nvidia.com/gpu: 1
+              ports:
+              - containerPort: 9991
+                name: mxjob-port

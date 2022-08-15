@@ -237,6 +237,18 @@ def make_mxjob(name,num_ps,num_workers,image,working_dir,command):
         "replicas": 1,
         "restartPolicy": "Never",
         "template": {
+            "metadata": {
+                "labels": {
+                    "pipeline-id": KFJ_PIPELINE_ID,
+                    "pipeline-name": KFJ_PIPELINE_NAME,
+                    "task-id": KFJ_TASK_ID,
+                    "task-name": KFJ_TASK_NAME,
+                    'rtx-user': KFJ_RUNNER,
+                    "component": name,
+                    "type": "mxjob",
+                    "run-id": KFJ_RUN_ID,
+                }
+            },
             "spec": {
                 "containers": [
                     {
