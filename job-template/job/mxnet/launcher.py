@@ -206,8 +206,8 @@ def make_mxjob(name,num_ps,num_workers,image,working_dir,command):
                         "name": "mxnet",
                         "image": image if image else KFJ_TASK_IMAGES,
                         "imagePullPolicy": "Always",
-                        "workingDir":working_dir,
-                        "command": ['bash','-c',command],
+                        "workingDir":working_dir if working_dir else None,
+                        "command": ['bash','-c',command] if command else None,
                         "volumeMounts": k8s_volume_mounts,
                         "resources": {
                             "requests": {
@@ -268,13 +268,14 @@ def make_mxjob(name,num_ps,num_workers,image,working_dir,command):
         },
         "spec": {
             "jobMode":'MXTrain',
-            "cleanPodPolicy": "None",
+            "runPolicy":{
+                "cleanPodPolicy": "None",
+            },
             "mxReplicaSpecs": {
                 "Scheduler":scheduler_pod_spec,
                 "Server":server_pod_spec,
                 "Worker":worker_pod_spec
             }
-
         }
     }
 
