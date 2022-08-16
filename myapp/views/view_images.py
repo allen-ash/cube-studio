@@ -166,7 +166,7 @@ class Images_Filter(MyappFilter):
     def apply(self, query, func):
         user_roles = [role.name.lower() for role in list(self.get_user_roles())]
         if "admin" in user_roles:
-            return query
+            return query.order_by(self.model.id.desc())
 
         result = query.order_by(self.model.id.desc())
         return result
