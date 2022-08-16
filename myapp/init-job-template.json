@@ -817,7 +817,6 @@
                     "label":"模型训练，json配置",
                     "require":1,
                     "choice":[
-
                     ],
                     "range":"",
                     "default":"",
@@ -1945,7 +1944,7 @@
                     "require": 1,
                     "choice": [],
                     "range": "",
-                    "default": "v2022.10.01.1",
+                    "default": "{{ datetime.datetime.now().strftime(\"v%Y.%m.%d.2\") }}",
                     "placeholder": "",
                     "describe": "模型版本号",
                     "editable": 1,
