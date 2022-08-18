@@ -122,14 +122,11 @@ kubectl apply -f kubeflow/pipeline/minio-artifact-secret.yaml
 kubectl apply -f kubeflow/pipeline/pipeline-runner-rolebinding.yaml
 
 cd kubeflow/pipeline/1.6.0/kustomize/
-kubectl delete -k env/platform-agnostic
-kubectl delete -k cluster-scoped-resources
-#kustomize build cluster-scoped-resources/ | kubectl apply -f -
 
+#kustomize build cluster-scoped-resources/ | kubectl apply -f -
 kubectl apply -k cluster-scoped-resources
 kubectl wait crd/applications.app.k8s.io --for condition=established --timeout=60s
 #kustomize build env/platform-agnostic/  | kubectl apply -f -
-
 kubectl apply -k env/platform-agnostic
 cd ../../../../
 
