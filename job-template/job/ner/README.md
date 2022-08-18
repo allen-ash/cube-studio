@@ -2,6 +2,7 @@
 镜像：ccr.ccs.tencentyun.com/cube-studio/ner:20220812
 启动参数：
 ```bash
+{
  "参数分组1": {
         "--model": {
             "type": "str",
