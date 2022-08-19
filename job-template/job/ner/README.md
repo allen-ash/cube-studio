@@ -36,7 +36,7 @@
             "sub_args": {}
         },
         "--epochs": {
-            "type": "int",
+            "type": "str",
             "item_type": "str",
             "label": "参数3",
             "require": 1,
