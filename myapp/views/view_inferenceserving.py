@@ -146,6 +146,7 @@ class InferenceService_ModelView_base():
             default='',
             description='容器的agent代理,istio用于服务网格',
             widget=Select2ManyWidget(),
+            validators=[],
             choices=[['istio','istio']]
         ),
         "priority": SelectField(
