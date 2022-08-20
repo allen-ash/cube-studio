@@ -82,4 +82,4 @@ platform:
 
 # Company
 
-![image](https://user-images.githubusercontent.com/20157705/176909239-f24cbf8d-8fb5-4326-abed-6fbc3f5a2d1f.png)
+![image](https://user-images.githubusercontent.com/20157705/185567563-b44c467a-a440-4e4a-9ae1-3a5cc7ca5fe8.png)
