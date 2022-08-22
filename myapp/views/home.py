@@ -28,7 +28,11 @@ from flask_appbuilder import ModelView,AppBuilder,expose,BaseView,has_access
 from myapp import app, appbuilder
 from flask import stream_with_context, request
 
-resource_used = {
+node_resource_used = {
+    "check_time": None,
+    "data": {}
+}
+pipeline_resource_used={
     "check_time": None,
     "data": {}
 }
@@ -47,10 +51,12 @@ class Myapp(BaseMyappView):
         else:
             msg = 'Hello '+g.user.username+" !"
 
+        # 返回模板
         return self.render_template('hello.html', msg=msg)
 
     @expose('/home')
     def home(self):
+        # 返回模板
         return self.render_template('home.html')
 
 
@@ -682,24 +688,24 @@ class Myapp(BaseMyappView):
             return self.render_template('external_link.html', data=data)
 
 
-    @expose('/schedule/node/<ip>')
-    def schedule_node(self,ip):
-        all_node_json = resource_used['data']
-        for cluster_name in all_node_json:
-            nodes = all_node_json[cluster_name]
-            if ip in nodes:
-                clusters = conf.get('CLUSTERS', {})
-                cluster = clusters[cluster_name]
-                k8s_client = K8s(cluster.get('KUBECONFIG',''))
-                # 获取最新的节点信息
-                nodes = k8s_client.get_node(ip=ip)
-                if nodes:
-                    node = nodes[0]
-                    enable_train = node['labels'].get('train','true')
-                    k8s_client.label_node([ip],{"train":"false" if enable_train=='true' else "true"})
-                    break
-
-        return redirect('/myapp/home')
+    # @expose('/schedule/node/<ip>')
+    # def schedule_node(self,ip):
+    #     all_node_json = resource_used['data']
+    #     for cluster_name in all_node_json:
+    #         nodes = all_node_json[cluster_name]
+    #         if ip in nodes:
+    #             clusters = conf.get('CLUSTERS', {})
+    #             cluster = clusters[cluster_name]
+    #             k8s_client = K8s(cluster.get('KUBECONFIG',''))
+    #             # 获取最新的节点信息
+    #             nodes = k8s_client.get_node(ip=ip)
+    #             if nodes:
+    #                 node = nodes[0]
+    #                 enable_train = node['labels'].get('train','true')
+    #                 k8s_client.label_node([ip],{"train":"false" if enable_train=='true' else "true"})
+    #                 break
+    #
+    #     return redirect('/myapp/home')
 
 
     # from myapp import tracer
@@ -707,7 +713,7 @@ class Myapp(BaseMyappView):
 
     # 机器学习首页资源弹窗
     def mlops_traffic(self,url):
-        if 1 or not resource_used['check_time'] or resource_used['check_time'] < (
+        if 1 or not node_resource_used['check_time'] or node_resource_used['check_time'] < (
                 datetime.datetime.now() - datetime.timedelta(minutes=10)):
             clusters = conf.get('CLUSTERS', {})
             for cluster_name in clusters:
@@ -749,10 +755,10 @@ class Myapp(BaseMyappView):
                     all_node_json[node]['used_cpu'] = int(sum(all_node_json[node]['used_cpu']))
                     all_node_json[node]['used_gpu'] = int(sum(all_node_json[node]['used_gpu']))
 
-                resource_used['data'][cluster_name] = all_node_json
-            resource_used['check_time'] = datetime.datetime.now()
+                node_resource_used['data'][cluster_name] = all_node_json
+            node_resource_used['check_time'] = datetime.datetime.now()
 
-        all_node_json = resource_used['data']
+        all_node_json = node_resource_used['data']
 
         # 数据格式说明 dict:
         # 'delay': Integer 延时隐藏 单位: 毫秒 0为不隐藏
@@ -765,7 +771,7 @@ class Myapp(BaseMyappView):
         message = ''
         td_html = '<td style="border: 1px solid black;padding: 10px">%s</th>'
         message += "<tr>%s %s %s %s %s %s %s<tr>" % (
-        td_html % "集群", td_html % "资源组(监控)", td_html % "机器(进出)", td_html % "机型", td_html % "cpu占用率", td_html % "内存占用率",
+        td_html % "集群", td_html % "资源组(监控)", td_html % "机器", td_html % "机型", td_html % "cpu占用率", td_html % "内存占用率",
         td_html % "gpu占用率")
         global_cluster_load = {}
         for cluster_name in all_node_json:
@@ -807,7 +813,7 @@ class Myapp(BaseMyappView):
                     if enable_train == 'true':
                         ip_html = '<a href="%s">%s</a>' % ("/myapp/schedule/node/%s" % ip, ip)
                     else:
-                        ip_html = '<a href="%s"><strike>%s</strike></a>' % ("/myapp/schedule/node/%s" % ip, ip)
+                        ip_html = '<a href="%s"><strike>%s</strike></a>' % (cluster_config.get('K8S_DASHBOARD_CLUSTER', '').strip('/')+'/#/node/%s?namespace=default' % ip, ip)
                 else:
                     if enable_train == 'true':
                         ip_html = ip
@@ -857,14 +863,127 @@ class Myapp(BaseMyappView):
         # 返回模板
         return jsonify(data)
 
+
+
+    # pipeline每个任务的资源占用情况
+    def pipeline_task_resource(self,url):
+        if not pipeline_resource_used['check_time'] or pipeline_resource_used['check_time'] < (datetime.datetime.now() - datetime.timedelta(minutes=10)):
+            clusters = conf.get('CLUSTERS', {})
+            all_tasks_json = {}
+            for cluster_name in clusters:
+                cluster = clusters[cluster_name]
+                k8s_client = K8s(cluster.get('KUBECONFIG',''))
+                try:
+                    # 获取pod的资源占用
+                    all_tasks_json[cluster_name]={}
+                    # print(all_node_json)
+                    for namespace in ['pipeline', 'katib', 'service']:
+                        all_tasks_json[cluster_name][namespace]={}
+                        all_pods = k8s_client.get_pods(namespace=namespace)
+                        for pod in all_pods:
+                            if pod['status'] == 'Running':
+                                user = pod['labels'].get('user',pod['labels'].get('username',pod['labels'].get('run-rtx',pod['labels'].get('rtx-user',''))))
+                                if user:
+                                    all_tasks_json[cluster_name][namespace][pod['name']] = {}
+                                    all_tasks_json[cluster_name][namespace][pod['name']]['username'] = user
+                                    # print(namespace,pod)
+                                    all_tasks_json[cluster_name][namespace][pod['name']]['request_memory']=pod['memory']
+                                    all_tasks_json[cluster_name][namespace][pod['name']]['request_cpu']=pod['cpu']
+                                    all_tasks_json[cluster_name][namespace][pod['name']]['request_gpu']=pod['gpu']
+                                    all_tasks_json[cluster_name][namespace][pod['name']]['namespace']=namespace
+
+                        # 获取pod的资源使用
+                        all_pods_metrics=k8s_client.get_pod_metrics(namespace=namespace)
+                        for pod in all_pods_metrics:
+                            if pod['name'] in all_tasks_json[cluster_name][namespace]:
+                                all_tasks_json[cluster_name][namespace][pod['name']]['used_memory']=pod['memory']
+                                all_tasks_json[cluster_name][namespace][pod['name']]['used_cpu']=pod['cpu']
+                except Exception as e:
+                    print(e)
+            pipeline_resource_used['data'] = all_tasks_json
+            pipeline_resource_used['check_time'] = datetime.datetime.now()
+
+        # 数据格式说明 dict:
+        # 'delay': Integer 延时隐藏 单位: 毫秒 0为不隐藏
+        # 'hit': Boolean 是否命中
+        # 'target': String 当前目标
+        # 'type': String 类型 目前仅支持html类型
+        # 'title': String 标题
+        # 'content': String 内容html内容
+        # /static/appbuilder/mnt/make_pipeline.mp4
+        all_tasks_json = pipeline_resource_used['data']
+        message = ''
+        td_html = '<td class="ellip1" style="border: 1px solid black;padding: 10px">%s</th>'
+        message += "<tr>%s %s %s %s %s %s %s<tr>" % (
+        td_html % "集群", td_html % "空间",td_html % "容器", td_html % "用户", td_html % "cpu", td_html % "内存",td_html % "gpu")
+        for cluster_name in all_tasks_json:
+            cluster_config = conf.get('CLUSTERS', {}).get(cluster_name, {})
+            for namespace in all_tasks_json[cluster_name]:
+                for pod_name in all_tasks_json[cluster_name][namespace]:
+                    pod = all_tasks_json[cluster_name][namespace][pod_name]
+                    dashboard_url = cluster_config.get('K8S_DASHBOARD_CLUSTER', '').strip('/') + '/#/search?namespace=%s&q=%s'%(namespace,pod_name)
+                    grafana_url = cluster_config.get('GRAFANA_HOST', '').strip('/') + conf.get('GRAFANA_TASK_PATH')
+                    message += '<tr>%s %s %s %s %s %s %s<tr>' % (
+                        td_html % cluster_name,
+                        td_html % ('<a target="blank" href="%s">%s</a>' % (dashboard_url, namespace)),
+                        '<td class="ellip1" style="border: 1px solid black;padding: 10px">%s</th>' % ('<a target="blank" href="%s">%s</a>' % (grafana_url+pod_name, pod_name)),
+                        td_html % pod['username'],
+                        td_html % ("cpu:%s/%s" % (int(int(pod.get('used_cpu','0'))/1000), int(pod.get('request_cpu','0')))),
+                        td_html % ("mem:%s/%s" % (int(pod.get('used_memory','0')), int(pod.get('request_memory','0')))),
+                        td_html % ("gpu:%s" % (pod.get('request_gpu','')),),
+                    )
+
+
+        message = Markup(f'<table>%s</table>' % message)
+        # print(message)
+        data = {
+            'content': message,
+            'delay': 3000,
+            'hit': True,
+            'target': url,
+            'title': '所有用户容器负载',
+            'type': 'html',
+        }
+        # 返回模板
+        return jsonify(data)
+
     @expose('/feature/check')
     # @trace(tracer,depth=1,trace_content='line')
+    # @pysnooper.snoop()
     def featureCheck(self):
         url = request.values.get("url", type=str, default=None)
         print(url)
         if '/myapp/home' in url:
             return self.mlops_traffic(url)
 
+        if url in '/frontend/train/total_resource':
+            if g.user.username in conf.get('ADMIN_USER',''):
+                return self.pipeline_task_resource(url)
+
+        # pipeline_url = conf.get('MODEL_URLS',{}).get('pipeline','')
+        # if url in pipeline_url:
+        #     data = {
+        #         'content': '',
+        #         'delay': 3000,
+        #         'hit': True,
+        #         'target': url,
+        #         'title': '重要通知',
+        #         'type': 'html',
+        #     }
+        #     # 返回模板
+        #     return jsonify(data)
+
+        # data = {
+        #     'content': url,
+        #     'delay': 3000,
+        #     'hit': True,
+        #     'target': url,
+        #     'title': url,
+        #     'type': 'html',
+        # }
+        # return jsonify(data)
+
+        # flash('xxxxxxx','success')
         return jsonify({})
 
 
