@@ -80,7 +80,7 @@ class Dataset_ModelView_base():
     base_order = ("id", "desc")
     order_columns=['id']
 
-    add_columns = ['name','label','describe','source_type','source','industry','field','usage','research','storage_class','file_type','years','url','download_url','path','storage_size','entries_num','duration','price','status']
+    add_columns = ['name','label','describe','source_type','source','industry','field','usage','research','storage_class','file_type','years','url','download_url','path','storage_size','entries_num','duration','price','status','icon']
     show_columns = ['id','name','label','describe','source_type','source','industry','field','usage','research','storage_class','file_type','status','years','url','path','download_url','storage_size','entries_num','duration','price']
     search_columns=['name','label','describe','source_type','source','industry','field','usage','research','storage_class','file_type','status','years','url','path','download_url']
     spec_label_columns = {
@@ -98,7 +98,8 @@ class Dataset_ModelView_base():
         "path":"本地路径",
         "entries_num":"条目数量",
         "duration":"文件时长",
-        "price": "价格"
+        "price": "价格",
+        "icon": "示例图"
     }
 
     edit_columns = add_columns
@@ -208,17 +209,17 @@ class Dataset_ModelView_base():
             widget=MySelect2Widget(can_input=True),
             choices=[[x, x] for x in ["损坏", "正常",'未购买','已购买','未标注','已标注','未校验','已校验']],
         ),
-        "url": SelectField(
+        "url": StringField(
             label=_(datamodel.obj.lab('url')),
             description='相关网址',
             widget=MyBS3TextAreaFieldWidget(rows=3)
         ),
-        "path": SelectField(
+        "path": StringField(
             label=_(datamodel.obj.lab('path')),
             description='本地路径',
             widget=MyBS3TextAreaFieldWidget(rows=3),
         ),
-        "download_url": SelectField(
+        "download_url": StringField(
             label=_(datamodel.obj.lab('download_url')),
             description='下载地址',
             widget=MyBS3TextAreaFieldWidget(rows=3)
