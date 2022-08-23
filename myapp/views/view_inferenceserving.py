@@ -123,6 +123,10 @@ class InferenceService_ModelView_base():
     order_columns = ['id']
 
     base_filters = [["id",InferenceService_Filter, lambda: []]]
+    images = []
+    INFERNENCE_IMAGES = list(conf.get('INFERNENCE_IMAGES', {}).values())
+    for item in INFERNENCE_IMAGES:
+        images += item
     service_type_choices= ['serving','tfserving','torch-server','onnxruntime','triton-server']
     sepc_label_columns = {
         # "host": _("域名：测试环境test.xx，调试环境 debug.xx"),
@@ -245,7 +249,7 @@ class InferenceService_ModelView_base():
             default='',
             description="推理服务镜像",
             widget=MySelect2Widget(can_input=True),
-            choices=[[x, x] for x in []]
+            choices=[[x, x] for x in images]
         ),
         'command': StringField(
             _(datamodel.obj.lab('command')),
