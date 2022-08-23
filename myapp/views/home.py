@@ -916,10 +916,12 @@ class Myapp(BaseMyappView):
         td_html = '<td class="ellip1" style="border: 1px solid black;padding: 10px">%s</th>'
         message += "<tr>%s %s %s %s %s %s %s<tr>" % (
         td_html % "集群", td_html % "空间",td_html % "容器", td_html % "用户", td_html % "cpu", td_html % "内存",td_html % "gpu")
+        exist_pod = False
         for cluster_name in all_tasks_json:
             cluster_config = conf.get('CLUSTERS', {}).get(cluster_name, {})
             for namespace in all_tasks_json[cluster_name]:
                 for pod_name in all_tasks_json[cluster_name][namespace]:
+                    exist_pod=True
                     pod = all_tasks_json[cluster_name][namespace][pod_name]
                     dashboard_url = cluster_config.get('K8S_DASHBOARD_CLUSTER', '').strip('/') + '/#/search?namespace=%s&q=%s'%(namespace,pod_name)
                     grafana_url = cluster_config.get('GRAFANA_HOST', '').strip('/') + conf.get('GRAFANA_TASK_PATH')
