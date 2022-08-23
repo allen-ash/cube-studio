@@ -147,7 +147,7 @@ class Dataset_ModelView_base():
             label=_(datamodel.obj.lab('describe')),
             default='',
             description='数据集描述',
-            widget=BS3TextFieldWidget(),
+            widget=MyBS3TextAreaFieldWidget(),
             validators=[DataRequired()]
         ),
         "industry": SelectField(
@@ -184,7 +184,7 @@ class Dataset_ModelView_base():
             label=_(datamodel.obj.lab('file_type')),
             description='文件类型',
             widget=MySelect2Widget(can_input=True),
-            choices=[[x, x] for x in ["png", "jpg",'txt','csv','wav','mp3','mp4','nv4']],
+            choices=[[x, x] for x in ["png", "jpg",'txt','csv','wav','mp3','mp4','nv4','zip','gz']],
         ),
         "storage_class": SelectField(
             label=_(datamodel.obj.lab('storage_class')),
@@ -212,27 +212,31 @@ class Dataset_ModelView_base():
         "url": StringField(
             label=_(datamodel.obj.lab('url')),
             description='相关网址',
-            widget=MyBS3TextAreaFieldWidget(rows=3)
+            widget=MyBS3TextAreaFieldWidget(rows=3),
+            default=''
         ),
         "path": StringField(
             label=_(datamodel.obj.lab('path')),
             description='本地路径',
             widget=MyBS3TextAreaFieldWidget(rows=3),
+            default=''
         ),
         "download_url": StringField(
             label=_(datamodel.obj.lab('download_url')),
             description='下载地址',
-            widget=MyBS3TextAreaFieldWidget(rows=3)
-        ),
+            widget=MyBS3TextAreaFieldWidget(rows=3),
+            default=''
+        )
     }
     edit_form_extra_fields = add_form_extra_fields
 
 
     import_data=True
+    download_data=True
 
-    def post_list(self,items):
-        flash(Markup('可批量删除不使用的数据集,可批量上传自产数据集'),category='info')
-        return items
+    # def post_list(self,items):
+    #     flash(Markup('可批量删除不使用的数据集,可批量上传自产数据集'),category='info')
+    #     return items
 
 class Dataset_ModelView_Api(Dataset_ModelView_base,MyappModelRestApi):
     datamodel = SQLAInterface(Dataset)
