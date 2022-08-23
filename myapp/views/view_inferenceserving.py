@@ -91,8 +91,8 @@ class InferenceService_ModelView_base():
 
     # add_columns = ['service_type','project','name', 'label','images','resource_memory','resource_cpu','resource_gpu','min_replicas','max_replicas','ports','host','hpa','metrics','health']
     add_columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path', 'resource_memory', 'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'hpa','priority', 'canary', 'shadow', 'host','inference_config',  'working_dir', 'command','volume_mount', 'env', 'ports', 'metrics', 'health','expand','sidecar']
-    show_columns = ['service_type','project', 'name', 'label','model_name', 'model_version', 'images', 'model_path', 'input_html', 'output_html', 'images', 'volume_mount','sidecar','working_dir', 'command', 'env', 'resource_memory',
-                    'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'ports', 'inference_host_url','hpa','priority', 'canary', 'shadow', 'health','model_status', 'expand_html','metrics_html','deploy_history','host','inference_config','metrics']
+    show_columns = ['service_type','project', 'name', 'label','model_name', 'model_version', 'images', 'model_path', 'model_input', 'model_output', 'images', 'volume_mount','sidecar','working_dir', 'command', 'env', 'resource_memory',
+                    'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'ports', 'host','hpa','priority', 'canary', 'shadow', 'health','model_status','expand','metrics','deploy_history','inference_config','metrics']
 
     edit_columns = add_columns
 
@@ -204,7 +204,9 @@ class InferenceService_ModelView_base():
 
         'expand': StringField(
             _(datamodel.obj.lab('expand')),
-            default='{}',
+            default=json.dumps({
+                "help_url":"https://github.com/tencentmusic/cube-studio/tree/master/images/serving"
+            },indent=4,ensure_ascii=False),
             description='扩展字段',
             widget=MyBS3TextAreaFieldWidget(rows=3)
         ),

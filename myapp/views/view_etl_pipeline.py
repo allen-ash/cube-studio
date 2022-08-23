@@ -175,7 +175,7 @@ class ETL_Pipeline_ModelView_Base():
 
     add_columns = ['project','name','describe']
     show_columns = ['project','name','describe','config_html','dag_json_html','created_by','changed_by','created_on','changed_on','expand_html']
-    edit_columns = ['project','name','describe','created_by']
+    edit_columns = add_columns
 
 
     base_filters = [["id", ETL_Pipeline_Filter, lambda: []]]
