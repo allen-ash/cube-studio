@@ -941,11 +941,14 @@ class Myapp(BaseMyappView):
             'delay': 3000,
             'hit': True,
             'target': url,
-            'title': '所有用户容器负载',
+            'title': '所有用户容器负载(仅管理员可见)',
             'type': 'html',
         }
         # 返回模板
-        return jsonify(data)
+        if exist_pod:
+            return jsonify(data)
+        else:
+            return jsonify({})
 
     @expose('/feature/check')
     # @trace(tracer,depth=1,trace_content='line')
@@ -956,7 +959,7 @@ class Myapp(BaseMyappView):
         if '/myapp/home' in url:
             return self.mlops_traffic(url)
 
-        if url in '/frontend/train/total_resource':
+        if url=='/train/total_resource':
             if g.user.username in conf.get('ADMIN_USER',''):
                 return self.pipeline_task_resource(url)
 

@@ -104,7 +104,7 @@ class Dataset_ModelView_base():
     edit_columns = add_columns
     list_columns = ['name','label','describe','source_type','source','status','industry','field','url_html','download_url_html','usage','research','storage_class','file_type','years','path','storage_size','entries_num','duration','price','owner']
     cols_width = {
-        "name": {"type": "ellip1", "width": 250},
+        "name": {"type": "ellip1", "width": 2500},
         "label": {"type": "ellip1", "width": 300},
         "describe":{"type": "ellip1", "width": 300},
         "field":{"type": "ellip1", "width": 100},
@@ -207,6 +207,21 @@ class Dataset_ModelView_base():
             description='数据集状态',
             widget=MySelect2Widget(can_input=True),
             choices=[[x, x] for x in ["损坏", "正常",'未购买','已购买','未标注','已标注','未校验','已校验']],
+        ),
+        "url": SelectField(
+            label=_(datamodel.obj.lab('url')),
+            description='相关网址',
+            widget=MyBS3TextAreaFieldWidget(rows=3)
+        ),
+        "path": SelectField(
+            label=_(datamodel.obj.lab('path')),
+            description='本地路径',
+            widget=MyBS3TextAreaFieldWidget(rows=3),
+        ),
+        "download_url": SelectField(
+            label=_(datamodel.obj.lab('download_url')),
+            description='下载地址',
+            widget=MyBS3TextAreaFieldWidget(rows=3)
         ),
     }
     edit_form_extra_fields = add_form_extra_fields
