@@ -91,8 +91,8 @@ class InferenceService_ModelView_base():
 
     # add_columns = ['service_type','project','name', 'label','images','resource_memory','resource_cpu','resource_gpu','min_replicas','max_replicas','ports','host','hpa','metrics','health']
     add_columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path', 'resource_memory', 'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'hpa','priority', 'canary', 'shadow', 'host','inference_config',  'working_dir', 'command','volume_mount', 'env', 'ports', 'metrics', 'health','expand','sidecar']
-    show_columns = ['service_type','project', 'name', 'label','model_name', 'model_version', 'images', 'model_path', 'model_input', 'model_output', 'images', 'volume_mount','sidecar','working_dir', 'command', 'env', 'resource_memory',
-                    'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'ports', 'host','hpa','priority', 'canary', 'shadow', 'health','model_status','expand','metrics','deploy_history','inference_config','metrics']
+    show_columns = ['service_type','project', 'name', 'label','model_name', 'model_version', 'images', 'model_path', 'images', 'volume_mount','sidecar','working_dir', 'command', 'env', 'resource_memory',
+                    'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'ports', 'inference_host_url','hpa','priority', 'canary', 'shadow', 'health','model_status','expand','metrics','deploy_history','host','inference_config']
 
     edit_columns = add_columns
 
@@ -101,11 +101,10 @@ class InferenceService_ModelView_base():
     }
     edit_form_query_rel_fields = add_form_query_rel_fields
 
-
-    list_columns = ['project','service_type','label','model_name_url','model_version','inference_host_url','ip','model_status','resource','creator','modified','operate_html']
+    list_columns = ['project','service_type','label','model_name_url','model_version','inference_host_url','ip','model_status','resource','replicas_html','creator','modified','operate_html']
     cols_width={
         "project":{"type": "ellip2", "width": 150},
-        "label": {"type": "ellip1", "width": 250},
+        "label": {"type": "ellip2", "width": 300},
         "service_type": {"type": "ellip2", "width": 100},
         "model_name_url":{"type": "ellip2", "width": 300},
         "model_version": {"type": "ellip2", "width": 200},
@@ -128,9 +127,10 @@ class InferenceService_ModelView_base():
     for item in INFERNENCE_IMAGES:
         images += item
     service_type_choices= ['serving','tfserving','torch-server','onnxruntime','triton-server']
-    sepc_label_columns = {
+    spec_label_columns = {
         # "host": _("域名：测试环境test.xx，调试环境 debug.xx"),
-        "resource":"资源"
+        "resource":"资源",
+        "replicas_html":"副本数"
     }
     service_type_choices = [x.replace('_','-') for x in service_type_choices]
     add_form_extra_fields={
@@ -147,7 +147,7 @@ class InferenceService_ModelView_base():
         "max_replicas": StringField(_(datamodel.obj.lab('max_replicas')), default=InferenceService.max_replicas.default.arg,
                                     description='最大副本数，用来配置高可用，流量变动自动伸缩', widget=BS3TextFieldWidget(),
                                     validators=[DataRequired()]),
-        "host": StringField(_(datamodel.obj.lab('host')), default=InferenceService.host.default.arg,description='访问域名，xx.serving.%s'%conf.get('ISTIO_INGRESS_DOMAIN',''),widget=BS3TextFieldWidget()),
+        "host": StringField(_(datamodel.obj.lab('host')), default=InferenceService.host.default.arg,description='访问域名，xx.%s'%conf.get('SERVICE_DOMAIN',''),widget=BS3TextFieldWidget()),
         "transformer":StringField(_(datamodel.obj.lab('transformer')), default=InferenceService.transformer.default.arg,description='前后置处理逻辑，用于原生开源框架的请求预处理和响应预处理，目前仅支持kfserving下框架',widget=BS3TextFieldWidget()),
         'resource_gpu':StringField(_(datamodel.obj.lab('resource_gpu')), default='0',
                                                         description='gpu的资源使用限制(单位卡)，示例:1，2，训练任务每个容器独占整卡。申请具体的卡型号，可以类似 1(V100),目前支持T4/V100/A100/VGPU',
@@ -326,7 +326,7 @@ class InferenceService_ModelView_base():
 
     model_columns = ['service_type', 'project', 'label', 'model_name', 'model_version', 'images', 'model_path']
     service_columns = ['resource_memory', 'resource_cpu', 'resource_gpu', 'min_replicas', 'max_replicas', 'hpa',
-                       'priority', 'canary', 'shadow', 'host', 'volume_mount']
+                       'priority', 'canary', 'shadow', 'host', 'volume_mount', 'sidecar']
     admin_columns = ['inference_config', 'working_dir', 'command', 'env', 'ports', 'metrics', 'health', 'expand']
 
     add_fieldsets = [
@@ -1063,7 +1063,7 @@ class InferenceService_ModelView(InferenceService_ModelView_base,MyappModelView)
     datamodel = SQLAInterface(InferenceService)
 
 
-appbuilder.add_view(InferenceService_ModelView,"推理服务",icon = 'fa-space-shuttle',category = '服务化')
+appbuilder.add_view_no_menu(InferenceService_ModelView)
 
 # 添加api
 class InferenceService_ModelView_Api(InferenceService_ModelView_base,MyappModelRestApi):
