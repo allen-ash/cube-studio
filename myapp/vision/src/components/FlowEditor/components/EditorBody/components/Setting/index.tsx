@@ -7,7 +7,7 @@ import { selectElements } from '@src/models/element';
 import { selectInfo, updateChanged, updateEditing, selectChanged } from '@src/models/pipeline';
 import { selectShow, toggle } from '@src/models/setting';
 import style from './style';
-import { DatePicker, Select } from 'antd';
+import { DatePicker, Select, Switch } from 'antd';
 import 'moment/locale/zh-cn';
 import locale from 'antd/es/date-picker/locale/zh_CN';
 import moment from 'moment';
@@ -23,7 +23,7 @@ const Setting: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<IDropdownOption>();
 
   // 配置变化事件
-  const handleOnChange = (key: string, value: string | number | IDropdownOption) => {
+  const handleOnChange = (key: string, value: string | number | boolean | IDropdownOption) => {
     const obj: any = {};
     obj[key] = value;
     if (key === 'project') {
@@ -157,14 +157,14 @@ const Setting: React.FC = () => {
             }}
             value={current?.describe || ''}
           />
-          <div className={style.splitLine}></div>
+          {/* <div className={style.splitLine}></div>
           <TextField
             label="命名空间"
             description="部署task所在的命名空间(目前无需填写)"
             value={current?.namespace || ''}
             readOnly
             disabled
-          />
+          /> */}
           <div className={style.splitLine}></div>
           <Dropdown
             label="调度类型"
@@ -206,7 +206,25 @@ const Setting: React.FC = () => {
               { label: 'Waiting', value: 'Waiting' },
               { label: 'Terminated', value: 'Terminated' },
             ]} />
-
+          {/* <Dropdown
+            label="监控状态"
+            options={[
+              { key: 'Created', text: 'Created' },
+              { key: 'Pending', text: 'Pending' },
+              { key: 'Running', text: 'Running' },
+              { key: 'Succeeded', text: 'Succeeded' },
+              { key: 'Failed', text: 'Failed' },
+              { key: 'Unknown', text: 'Unknown' },
+              { key: 'Waiting', text: 'Waiting' },
+              { key: 'Terminated', text: 'Terminated' },
+            ]}
+            multiSelect
+            selectedKey={current?.alert_status}
+            onChange={(event: FormEvent, option?: IDropdownOption) => {
+              console.log(event, option)
+              // handleOnChange('alert_status', `${option?.text}` || '');
+            }}
+          /> */}
           <div className={style.splitLine}></div>
           <TextField
             label="报警人"
@@ -217,7 +235,14 @@ const Setting: React.FC = () => {
             value={current?.alert_user || ''}
           />
           <div className={style.splitLine}></div>
-
+          {/* <TextField
+            label="调度机器"
+            description="部署task所在的机器(目前无需填写)"
+            onChange={(event: FormEvent, value?: string) => {
+              handleOnChange('node_selector', value ? value : '');
+            }}
+            value={current?.node_selector || ''}
+          /> */}
           <div style={{ fontWeight: 600, padding: '5px 0px' }}>补录起点</div>
           <DatePicker
             style={{ width: '100%', border: '1px solid rgb(55, 55, 55)' }}
@@ -232,16 +257,7 @@ const Setting: React.FC = () => {
               return current && current > moment().endOf('day');
             }} />
 
-          <div className={style.splitLine}></div>
-
-          <TextField
-            label="调度机器"
-            description="部署task所在的机器(目前无需填写)"
-            onChange={(event: FormEvent, value?: string) => {
-              handleOnChange('node_selector', value ? value : '');
-            }}
-            value={current?.node_selector || ''}
-          />
+{/* 
           <div className={style.splitLine}></div>
           <Dropdown
             label="镜像拉取策略"
@@ -253,7 +269,7 @@ const Setting: React.FC = () => {
             onChange={(event: FormEvent, option?: IDropdownOption) => {
               handleOnChange('image_pull_policy', `${option?.text}` || '');
             }}
-          />
+          /> */}
           <div className={style.splitLine}></div>
           <Dropdown
             label="过往依赖"
