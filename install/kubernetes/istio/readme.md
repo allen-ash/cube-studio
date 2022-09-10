@@ -1,11 +1,10 @@
-version=1.15.0
+version=1.14.1
 wget -c https://github.com/istio/istio/releases/download/$version/istioctl-$version-linux-amd64.tar.gz
 tar zxfv istioctl-$version-linux-amd64.tar.gz -C /usr/local/bin/
 
-下载istioctl
-curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.15.0 TARGET_ARCH=x86_64 sh -
+curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.14.1 TARGET_ARCH=x86_64 sh -
 
-./istioctl manifest generate --set Values.global.jwtPolicy=first-party-jwt > install.yaml
+istioctl manifest generate --set Values.global.jwtPolicy=first-party-jwt > install.yaml
 
 kubectl apply -f install.yaml
 
