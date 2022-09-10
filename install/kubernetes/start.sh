@@ -22,7 +22,7 @@ kubectl create -f redis/service.yaml
 # 如果自己需要使用pv来保存redis队列数据，可以修改master.yaml
 kubectl create -f redis/master.yaml
 # 部署kube-batch
-kubectl create -f kube-batch/deploy.yaml
+#kubectl create -f kube-batch/deploy.yaml
 
 # 部署prometheus
 cd prometheus
@@ -92,6 +92,7 @@ kubectl apply -f gpu/dcgm-exporter-sm.yaml
 kubectl create serviceaccount frameworkcontroller --namespace kubeflow
 kubectl create clusterrolebinding frameworkcontroller-kubeflow --clusterrole=cluster-admin --user=system:serviceaccount:kubeflow:frameworkcontroller
 kubectl create -f frameworkcontroller/frameworkcontroller-with-default-config.yaml
+sleep 5
 kubectl wait crd/frameworks.frameworkcontroller.microsoft.com --for condition=established --timeout=60s
 
 kubectl create serviceaccount frameworkbarrier --namespace pipeline
