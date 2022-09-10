@@ -225,6 +225,8 @@ class Notebook_ModelView_Base():
 
         if 'theia' in item.images or 'vscode' in item.images:
             item.ide_type = 'theia'
+        elif 'hadoop' in item.images or 'spark' in item.images:
+            item.ide_type = 'hadoop'
         else:
             item.ide_type = 'jupyter'
 
@@ -300,45 +302,32 @@ class Notebook_ModelView_Base():
     def reset_notebook(self, notebook):
         notebook.changed_on=datetime.datetime.now()
         db.session.commit()
-        self.reset_theia(notebook)
+        if notebook.ide_type=='jupyter' or notebook.ide_type=='theia':
+            self.reset_theia(notebook)
+        elif notebook.ide_type=='hadoop':
+            self.reset_theia(notebook)
 
 
-    # 部署pod，service，VirtualService
-    # @pysnooper.snoop(watch_explode=('notebook',))
-    def reset_theia(self, notebook):
+    # 重置spark版本jupyter
+    def reset_spark_jupyter(self,notebook):
         from myapp.utils.py.py_k8s import K8s
 
-        k8s_client = K8s(notebook.cluster.get('KUBECONFIG',''))
+        k8s_client = K8s(notebook.cluster.get('KUBECONFIG', ''))
         namespace = conf.get('NOTEBOOK_NAMESPACE')
-        port=3000
+        port = 3000
 
-        command=None
-        workingDir=None
+        command = None
+        workingDir = None
         volume_mount = notebook.volume_mount
-        rewrite_url = '/'
+        rewrite_url = '/notebook/jupyter/%s/' % notebook.name
         pre_command = '(nohup sh /init.sh > /notebook_init.log 2>&1 &) ; (nohup sh /mnt/%s/init.sh > /init.log 2>&1 &) ; '%notebook.created_by.username
-        if notebook.ide_type=='jupyter':
-            rewrite_url = '/notebook/jupyter/%s/' % notebook.name
-            workingDir = '/mnt/%s' % notebook.created_by.username
-            command = ["sh", "-c", "%s jupyter lab --notebook-dir=%s --ip=0.0.0.0 "
-                                    "--no-browser --allow-root --port=%s "
-                                    "--NotebookApp.token='' --NotebookApp.password='' --ServerApp.disable_check_xsrf=True "
-                                    "--NotebookApp.allow_origin='*' "
-                                    "--NotebookApp.base_url=%s" % (pre_command,notebook.mount,port,rewrite_url)]
 
-            # command = ["sh", "-c", "%s jupyter lab --notebook-dir=/ --ip=0.0.0.0 "
-            #                         "--no-browser --allow-root --port=%s "
-            #                         "--NotebookApp.token='' --NotebookApp.password='' "
-            #                         "--NotebookApp.allow_origin='*' "
-            #                         "--NotebookApp.base_url=%s" % (pre_command,port,rewrite_url)]
-
-
-        elif notebook.ide_type=='theia':
-            command = ["bash",'-c','%s node /home/theia/src-gen/backend/main.js /home/project --hostname=0.0.0.0 --port=%s'%(pre_command,port)]
-            # command = ["node","/home/theia/src-gen/backend/main.js",  "/home/project","--hostname=0.0.0.0","--port=%s"%port]
-            workingDir = '/home/theia'
-        print(command)
-        print(workingDir)
+        workingDir = '/mnt/%s' % notebook.created_by.username
+        command = ["sh", "-c", "%s jupyter lab --notebook-dir=%s --ip=0.0.0.0 "
+                               "--no-browser --allow-root --port=%s "
+                               "--NotebookApp.token='' --NotebookApp.password='' --ServerApp.disable_check_xsrf=True "
+                               "--NotebookApp.allow_origin='*' "
+                               "--NotebookApp.base_url=%s" % (pre_command, notebook.mount, port, rewrite_url)]
 
 
         image_secrets = conf.get('HUBSECRET', [])
@@ -370,6 +359,91 @@ class Notebook_ModelView_Base():
                 "USERNAME": notebook.created_by.username,
                 "NODE_OPTIONS":"--max-old-space-size=%s"%str(int(notebook.resource_memory.replace("G",''))*1024)
             },
+            privileged=None,
+            accounts=conf.get('JUPYTER_ACCOUNTS'),
+            username=notebook.created_by.username
+        )
+
+
+
+
+    # 部署pod，service，VirtualService
+    # @pysnooper.snoop(watch_explode=('notebook',))
+    def reset_theia(self, notebook):
+        from myapp.utils.py.py_k8s import K8s
+
+        k8s_client = K8s(notebook.cluster.get('KUBECONFIG',''))
+        namespace = conf.get('NOTEBOOK_NAMESPACE')
+        SERVICE_EXTERNAL_IP = ''
+        if notebook.project.expand:
+            SERVICE_EXTERNAL_IP = json.loads(notebook.project.expand).get('SERVICE_EXTERNAL_IP', '')
+            if type(SERVICE_EXTERNAL_IP)==str:
+                SERVICE_EXTERNAL_IP = [SERVICE_EXTERNAL_IP]
+
+        port=3000
+
+        command=None
+        workingDir=None
+        volume_mount = notebook.volume_mount
+        rewrite_url = '/'
+        pre_command = '(nohup sh /init.sh > /notebook_init.log 2>&1 &) ; (nohup sh /mnt/%s/init.sh > /init.log 2>&1 &) ; '%notebook.created_by.username
+        if notebook.ide_type=='jupyter' or notebook.ide_type=='hadoop':
+            rewrite_url = '/notebook/jupyter/%s/' % notebook.name
+            workingDir = '/mnt/%s' % notebook.created_by.username
+            command = ["sh", "-c", "%s jupyter lab --notebook-dir=%s --ip=0.0.0.0 "
+                                    "--no-browser --allow-root --port=%s "
+                                    "--NotebookApp.token='' --NotebookApp.password='' --ServerApp.disable_check_xsrf=True "
+                                    "--NotebookApp.allow_origin='*' "
+                                    "--NotebookApp.base_url=%s" % (pre_command,notebook.mount,port,rewrite_url)]
+
+            # command = ["sh", "-c", "%s jupyter lab --notebook-dir=/ --ip=0.0.0.0 "
+            #                         "--no-browser --allow-root --port=%s "
+            #                         "--NotebookApp.token='' --NotebookApp.password='' "
+            #                         "--NotebookApp.allow_origin='*' "
+            #                         "--NotebookApp.base_url=%s" % (pre_command,port,rewrite_url)]
+
+
+        elif notebook.ide_type=='theia':
+            command = ["bash",'-c','%s node /home/theia/src-gen/backend/main.js /home/project --hostname=0.0.0.0 --port=%s'%(pre_command,port)]
+            # command = ["node","/home/theia/src-gen/backend/main.js",  "/home/project","--hostname=0.0.0.0","--port=%s"%port]
+            workingDir = '/home/theia'
+        print(command)
+        print(workingDir)
+
+
+        image_secrets = conf.get('HUBSECRET', [])
+        user_hubsecrets = db.session.query(Repository.hubsecret).filter(Repository.created_by_fk == notebook.created_by.id).all()
+        if user_hubsecrets:
+            for hubsecret in user_hubsecrets:
+                if hubsecret[0] not in image_secrets:
+                    image_secrets.append(hubsecret[0])
+
+        labels = {"app":notebook.name,'user':notebook.created_by.username,'pod-type':"notebook"}
+        env={
+            "NO_AUTH": "true",
+            "USERNAME": notebook.created_by.username,
+            "NODE_OPTIONS": "--max-old-space-size=%s" % str(int(notebook.resource_memory.replace("G", '')) * 1024),
+            "PORT_RANGE":"%s,%s"%(10000 + 10 * notebook.id,10000 + 10 * notebook.id+9),
+            "SERVICE_EXTERNAL_IP":SERVICE_EXTERNAL_IP
+        }
+
+        k8s_client.create_debug_pod(
+            namespace=namespace,
+            name=notebook.name,
+            labels=labels,
+            command=command,
+            args=None,
+            volume_mount=volume_mount,
+            working_dir=workingDir,
+            node_selector=notebook.get_node_selector(),
+            resource_memory="0G~"+notebook.resource_memory,
+            resource_cpu="0~"+notebook.resource_cpu,
+            resource_gpu=notebook.resource_gpu,
+            image_pull_policy=conf.get('IMAGE_PULL_POLICY','Always'),
+            image_pull_secrets=image_secrets,
+            image=notebook.images,
+            hostAliases=conf.get('HOSTALIASES',''),
+            env=env,
             privileged=None,
             accounts=conf.get('JUPYTER_ACCOUNTS'),
             username=notebook.created_by.username
@@ -441,14 +515,15 @@ class Notebook_ModelView_Base():
         crd = k8s_client.create_crd(group=crd_info['group'], version=crd_info['version'], plural=crd_info['plural'],namespace=namespace, body=crd_json)
 
         # 边缘模式时，需要根据项目组中的配置设置代理ip
-        SERVICE_EXTERNAL_IP = ''
-        if notebook.project.expand:
-            SERVICE_EXTERNAL_IP = json.loads(notebook.project.expand).get('SERVICE_EXTERNAL_IP', '')
-            if type(SERVICE_EXTERNAL_IP)==str:
-                SERVICE_EXTERNAL_IP = [SERVICE_EXTERNAL_IP]
 
         if SERVICE_EXTERNAL_IP:
-            service_ports = [[10000 + 10 * notebook.id + index, port] for index, port in enumerate([port])]
+            ports=[port]
+            if notebook.ide_type=='hadoop':
+                for index in range(9):
+                    ports.append(10000 + 10 * notebook.id + index)
+
+            ports=list(set(ports))
+            service_ports = [[10000 + 10 * notebook.id + index, port] for index, port in enumerate(ports)]
             service_external_name = (notebook.name + "-external").lower()[:60].strip('-')
             k8s_client.create_service(
                 namespace=namespace,
