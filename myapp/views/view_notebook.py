@@ -379,6 +379,9 @@ class Notebook_ModelView_Base():
             SERVICE_EXTERNAL_IP = json.loads(notebook.project.expand).get('SERVICE_EXTERNAL_IP', '')
             if type(SERVICE_EXTERNAL_IP)==str:
                 SERVICE_EXTERNAL_IP = [SERVICE_EXTERNAL_IP]
+        if not SERVICE_EXTERNAL_IP:
+            if core.checkip(request.host):
+                SERVICE_EXTERNAL_IP=[request.host]
 
         port=3000
 
@@ -427,8 +430,6 @@ class Notebook_ModelView_Base():
         }
         if SERVICE_EXTERNAL_IP:
             env["SERVICE_EXTERNAL_IP"]=SERVICE_EXTERNAL_IP[0]
-        elif core.checkip(request.host):
-            env["SERVICE_EXTERNAL_IP"]=request.host
 
         k8s_client.create_debug_pod(
             namespace=namespace,
