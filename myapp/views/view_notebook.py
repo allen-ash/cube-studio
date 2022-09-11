@@ -374,7 +374,7 @@ class Notebook_ModelView_Base():
 
         k8s_client = K8s(notebook.cluster.get('KUBECONFIG',''))
         namespace = conf.get('NOTEBOOK_NAMESPACE')
-        SERVICE_EXTERNAL_IP = ''
+        SERVICE_EXTERNAL_IP = []
         if notebook.project.expand:
             SERVICE_EXTERNAL_IP = json.loads(notebook.project.expand).get('SERVICE_EXTERNAL_IP', '')
             if type(SERVICE_EXTERNAL_IP)==str:
@@ -423,9 +423,10 @@ class Notebook_ModelView_Base():
             "NO_AUTH": "true",
             "USERNAME": notebook.created_by.username,
             "NODE_OPTIONS": "--max-old-space-size=%s" % str(int(notebook.resource_memory.replace("G", '')) * 1024),
-            "PORT_RANGE":"%s,%s"%(10000 + 10 * notebook.id,10000 + 10 * notebook.id+9),
-            "SERVICE_EXTERNAL_IP":SERVICE_EXTERNAL_IP
+            "PORT_RANGE":"%s-%s"%(10000 + 10 * notebook.id,10000 + 10 * notebook.id+9)
         }
+        if SERVICE_EXTERNAL_IP:
+            env["SERVICE_EXTERNAL_IP"]=SERVICE_EXTERNAL_IP[0]
 
         k8s_client.create_debug_pod(
             namespace=namespace,
