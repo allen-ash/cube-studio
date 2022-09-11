@@ -427,6 +427,8 @@ class Notebook_ModelView_Base():
         }
         if SERVICE_EXTERNAL_IP:
             env["SERVICE_EXTERNAL_IP"]=SERVICE_EXTERNAL_IP[0]
+        elif core.checkip(request.host):
+            env["SERVICE_EXTERNAL_IP"]=request.host
 
         k8s_client.create_debug_pod(
             namespace=namespace,
