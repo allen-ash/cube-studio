@@ -225,8 +225,8 @@ class Notebook_ModelView_Base():
 
         if 'theia' in item.images or 'vscode' in item.images:
             item.ide_type = 'theia'
-        elif 'hadoop' in item.images or 'spark' in item.images:
-            item.ide_type = 'hadoop'
+        elif 'bigdata' in item.images:
+            item.ide_type = 'bigdata'
         else:
             item.ide_type = 'jupyter'
 
@@ -302,69 +302,7 @@ class Notebook_ModelView_Base():
     def reset_notebook(self, notebook):
         notebook.changed_on=datetime.datetime.now()
         db.session.commit()
-        if notebook.ide_type=='jupyter' or notebook.ide_type=='theia':
-            self.reset_theia(notebook)
-        elif notebook.ide_type=='hadoop':
-            self.reset_theia(notebook)
-
-
-    # 重置spark版本jupyter
-    def reset_spark_jupyter(self,notebook):
-        from myapp.utils.py.py_k8s import K8s
-
-        k8s_client = K8s(notebook.cluster.get('KUBECONFIG', ''))
-        namespace = conf.get('NOTEBOOK_NAMESPACE')
-        port = 3000
-
-        command = None
-        workingDir = None
-        volume_mount = notebook.volume_mount
-        rewrite_url = '/notebook/jupyter/%s/' % notebook.name
-        pre_command = '(nohup sh /init.sh > /notebook_init.log 2>&1 &) ; (nohup sh /mnt/%s/init.sh > /init.log 2>&1 &) ; '%notebook.created_by.username
-
-        workingDir = '/mnt/%s' % notebook.created_by.username
-        command = ["sh", "-c", "%s jupyter lab --notebook-dir=%s --ip=0.0.0.0 "
-                               "--no-browser --allow-root --port=%s "
-                               "--NotebookApp.token='' --NotebookApp.password='' --ServerApp.disable_check_xsrf=True "
-                               "--NotebookApp.allow_origin='*' "
-                               "--NotebookApp.base_url=%s" % (pre_command, notebook.mount, port, rewrite_url)]
-
-
-        image_secrets = conf.get('HUBSECRET', [])
-        user_hubsecrets = db.session.query(Repository.hubsecret).filter(Repository.created_by_fk == notebook.created_by.id).all()
-        if user_hubsecrets:
-            for hubsecret in user_hubsecrets:
-                if hubsecret[0] not in image_secrets:
-                    image_secrets.append(hubsecret[0])
-
-        labels = {"app":notebook.name,'user':notebook.created_by.username,'pod-type':"notebook"}
-        k8s_client.create_debug_pod(
-            namespace=namespace,
-            name=notebook.name,
-            labels=labels,
-            command=command,
-            args=None,
-            volume_mount=volume_mount,
-            working_dir=workingDir,
-            node_selector=notebook.get_node_selector(),
-            resource_memory="0G~"+notebook.resource_memory,
-            resource_cpu="0~"+notebook.resource_cpu,
-            resource_gpu=notebook.resource_gpu,
-            image_pull_policy=conf.get('IMAGE_PULL_POLICY','Always'),
-            image_pull_secrets=image_secrets,
-            image=notebook.images,
-            hostAliases=conf.get('HOSTALIASES',''),
-            env={
-                "NO_AUTH": "true",
-                "USERNAME": notebook.created_by.username,
-                "NODE_OPTIONS":"--max-old-space-size=%s"%str(int(notebook.resource_memory.replace("G",''))*1024)
-            },
-            privileged=None,
-            accounts=conf.get('JUPYTER_ACCOUNTS'),
-            username=notebook.created_by.username
-        )
-
-
+        self.reset_theia(notebook)
 
 
     # 部署pod，service，VirtualService
@@ -377,7 +315,7 @@ class Notebook_ModelView_Base():
         SERVICE_EXTERNAL_IP = []
         if notebook.project.expand:
             SERVICE_EXTERNAL_IP = json.loads(notebook.project.expand).get('SERVICE_EXTERNAL_IP', '')
-            if type(SERVICE_EXTERNAL_IP)==str:
+            if SERVICE_EXTERNAL_IP and type(SERVICE_EXTERNAL_IP)==str:
                 SERVICE_EXTERNAL_IP = [SERVICE_EXTERNAL_IP]
         if not SERVICE_EXTERNAL_IP:
             if core.checkip(request.host):
@@ -390,7 +328,7 @@ class Notebook_ModelView_Base():
         volume_mount = notebook.volume_mount
         rewrite_url = '/'
         pre_command = '(nohup sh /init.sh > /notebook_init.log 2>&1 &) ; (nohup sh /mnt/%s/init.sh > /init.log 2>&1 &) ; '%notebook.created_by.username
-        if notebook.ide_type=='jupyter' or notebook.ide_type=='hadoop':
+        if notebook.ide_type=='jupyter' or notebook.ide_type=='bigdata':
             rewrite_url = '/notebook/jupyter/%s/' % notebook.name
             workingDir = '/mnt/%s' % notebook.created_by.username
             command = ["sh", "-c", "%s jupyter lab --notebook-dir=%s --ip=0.0.0.0 "
@@ -426,7 +364,7 @@ class Notebook_ModelView_Base():
             "NO_AUTH": "true",
             "USERNAME": notebook.created_by.username,
             "NODE_OPTIONS": "--max-old-space-size=%s" % str(int(notebook.resource_memory.replace("G", '')) * 1024),
-            "PORT_RANGE":"%s-%s"%(10000 + 10 * notebook.id,10000 + 10 * notebook.id+9)
+            "PORT_RANGE":"%s-%s"%(10000 + 10 * notebook.id+1,10000 + 10 * notebook.id+9)
         }
         if SERVICE_EXTERNAL_IP:
             env["SERVICE_EXTERNAL_IP"]=SERVICE_EXTERNAL_IP[0]
@@ -522,7 +460,7 @@ class Notebook_ModelView_Base():
 
         if SERVICE_EXTERNAL_IP:
             ports=[port]
-            if notebook.ide_type=='hadoop':
+            if notebook.ide_type=='bigdata':
                 for index in range(9):
                     ports.append(10000 + 10 * notebook.id + index)
 
