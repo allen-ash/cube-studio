@@ -114,6 +114,7 @@ kubectl apply -f istio/install-crd.yaml
 kubectl wait crd/envoyfilters.networking.istio.io --for condition=established --timeout=60s
 kubectl apply -f istio/install.yaml
 # k8s 1.21+
+# kubectl delete -f istio/install.yaml
 # kubectl apply -f istio/install-1.15.0.yaml
 
 # 部署kfp pipeline
